@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BookOpen, Users, ClipboardList, Wallet, ShieldCheck, ChartNoAxesColumn, Settings, ChevronRight, Plus, Menu, Languages, ArrowUpRight, Check, Trash2 } from 'lucide-react';
 import type { Course } from './model';
 import './swaye3.css';
@@ -16,8 +16,8 @@ const navItems=[['/swaye3/overview','overview',BookOpen],['/admin-app/courses/in
 export function Swaye3Workspace({courses,path,onNavigate,children}:Props){
  const [lang,setLang]=useState<'fr'|'ar'>(()=>read('teachable-swaye3-language-v1','fr'));
  const [role,setRole]=useState<'centre'|'enseignant'>(()=>read('teachable-swaye3-role-v1','centre'));
- const [mobile,setMobile]=useState(false); const [revision,setRevision]=useState(0); const [notice,setNotice]=useState('');
- const t=labels[lang]; const students=useMemo(()=>{const raw=read<unknown>('teachable-recreation-students-v1',[]);const list=Array.isArray(raw)?raw:(raw&&typeof raw==='object'&&Array.isArray((raw as {students?:unknown[]}).students)?(raw as {students:unknown[]}).students:[]);return list.filter((x):x is Student=>!!x&&typeof x==='object')},[revision]);
+ const [mobile,setMobile]=useState(false); const [,setRevision]=useState(0); const [notice,setNotice]=useState('');
+ const t=labels[lang]; const students=(()=>{const raw=read<unknown>('teachable-recreation-students-v1',[]);const list=Array.isArray(raw)?raw:(raw&&typeof raw==='object'&&Array.isArray((raw as {students?:unknown[]}).students)?(raw as {students:unknown[]}).students:[]);return list.filter((x):x is Student=>!!x&&typeof x==='object')})();
  const enrollments=read<Record<string,string[]>>('teachable-enrollments-v2',{}); const keys=Object.keys(enrollments).filter(k=>Array.isArray(enrollments[k]));
  const published=courses.filter(c=>c.published).length; const drafts=courses.filter(c=>!c.published).length;
  useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(''),2600);return()=>clearTimeout(timer)},[notice]);
