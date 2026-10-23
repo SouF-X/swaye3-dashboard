@@ -1,0 +1,13 @@
+.storage-status{font-size:12px;color:#52604a;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.storage-status::before{content:'';width:6px;height:6px;background:#7a9420;border-radius:50%}.storage-status.offline{color:#92400e}.storage-status.offline::before{background:#c27621}.workspace-notice{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;background:#24282c;color:#fff;padding:12px 18px;border-radius:8px;max-width:90vw;font-size:13px}.top-actions{flex-wrap:wrap}.demo-note{font-size:13px;color:#5f655d;margin-bottom:20px}.workspace-loading{font-family:system-ui,sans-serif;max-width:440px;margin:20vh auto;padding:28px;color:#292c29}.workspace-loading h1{font-family:Georgia,serif;font-weight:400}.workspace-loading p{line-height:1.6}@media(max-width:600px){.storage-status{font-size:10px}.topbar .top-actions{gap:6px}.topbar .btn{padding:7px 9px;font-size:11px}}
+.page-builder>.builder-toolbar{height:64px;background:#fff;color:#30343c;padding:0 24px 0 0;gap:0;border-bottom:1px solid #e1e2e8}
+.page-builder>.builder-toolbar>.icon-button{align-self:stretch;height:64px;width:56px;border-radius:0;background:#353950;color:#fff;border-right:1px solid #ffffff24}
+.page-builder>.builder-toolbar>.builder-title{height:64px;width:244px;min-width:244px;justify-content:center;padding:0 20px;background:#353950;color:#fff}
+.page-builder>.builder-toolbar .builder-save{color:#4b5059;margin-left:auto;margin-right:12px}
+.page-builder>.builder-toolbar .btn{margin-left:12px;background:#fff;color:#30343c;border-color:#8d9197}
+.page-builder>.builder-toolbar .btn.primary{background:#eaff33;color:#222;border-color:#97a026}
+.page-builder .sales-hero{background-image:none;min-height:360px}
+.page-builder .sales-hero::before{background-image:var(--banner-image,none);background-size:cover;background-position:center;opacity:var(--image-opacity,1)}
+.page-builder .sales-hero h1{font-family:Arial,sans-serif;font-weight:700;font-size:clamp(30px,4vw,48px)}
+.page-builder .sales-hero-copy{z-index:1}
+@media(max-width:760px){.page-builder>.builder-toolbar>.builder-title{width:194px;min-width:194px}.page-builder>.builder-toolbar{padding-right:10px}.page-builder>.builder-toolbar .btn{margin-left:7px}.page-builder>.builder-toolbar .builder-save{margin-right:4px}}
+@media(max-width:520px){.page-builder>.builder-toolbar{height:58px;padding-right:8px}.page-builder>.builder-toolbar>.icon-button{width:44px;height:58px}.page-builder>.builder-toolbar>.builder-title{display:none}.page-builder .sales-hero{min-height:300px}.page-builder>.builder-toolbar .builder-save{margin-left:12px;margin-right:auto}}

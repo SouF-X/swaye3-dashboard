@@ -1,0 +1,6 @@
+export type Block = { id: string; type: string; content?: string; mediaUrl?: string; fileName?: string; mimeType?: string; questions?: {title:string; answers:string[]; correct:number; feedback:string}[] };
+export type Lesson = { id: string; title: string; published: boolean; blocks: Block[]; comments: boolean; publicPreview: boolean };
+export type Section = { id: string; title: string; lessons: Lesson[]; drip?: number; summary?: string };
+export type SalesBlock = { id: string; type: string; heading: string; text: string; imageUrl?: string; imageAlt?: string; videoUrl?: string; buttonText?: string; showButton?: boolean; buttonAction?: 'url' | 'checkout'; buttonUrl?: string; buttonRadius?: number; alignment?: 'left' | 'center' | 'right'; backgroundColor?: string; textColor?: string; overlay?: number; spacing?: 'compact' | 'comfortable' | 'spacious'; paddingTop?: number; paddingBottom?: number; contentWidth?: number };
+export type SalesPage = { id:string; title:string; blocks:SalesBlock[] };
+export type Course = { id: string; title: string; description: string; published: boolean; sections: Section[]; thumbnail?:string; catalog?:boolean; settings?:Record<string,boolean>; template?:string; pageTitle?:string; pageDescription?:string; salesBlocks?:SalesBlock[]; pages?:SalesPage[] };
