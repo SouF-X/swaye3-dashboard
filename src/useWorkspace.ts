@@ -3,6 +3,9 @@ import {
   accessRecords,
   keys,
   normalizeStudents,
+  membershipFor,
+  belongsToCenter,
+  centerProfile,
   read,
   write,
   type Membership,
@@ -24,7 +27,13 @@ export function useWorkspace() {
       window.removeEventListener("storage", onChange);
     };
   }, []);
-  const students = normalizeStudents(read(keys.students, []));
+  const legacyStudents = normalizeStudents(read(keys.students, []));
+  const legacyIds = new Set(legacyStudents.map((s) => s.id));
+  const registry = normalizeStudents(read(keys.registry, []));
+  const students = [
+    ...legacyStudents,
+    ...registry.filter((s) => !legacyIds.has(s.id)),
+  ];
   const codes = read<Record<string, string>>(keys.codes, {});
   useEffect(() => {
     const next = { ...read<Record<string, string>>(keys.codes, {}) };
@@ -64,9 +73,17 @@ export function useWorkspace() {
   });
   return {
     students,
+    centerStudents: students
+      .filter((s) =>
+        belongsToCenter(membershipFor(s.id, legacyIds, memberships)),
+      )
+      .map((s) =>
+        centerProfile(s, membershipFor(s.id, legacyIds, memberships)),
+      ),
     codes,
     memberships,
-    member: (id: string): Membership => memberships[id] || { status: "active" },
+    member: (id: string): Membership =>
+      membershipFor(id, legacyIds, memberships),
     access,
     enrollments,
     profile,

@@ -21,6 +21,8 @@ import {
 } from "./swaye3Model";
 import { Badge } from "./WorkspaceUI";
 import "./learner.css";
+import { StudentRegistration } from "./StudentRegistration";
+import { StudentCard } from "./StudentIdentityCard";
 export function LearnerPortal({
   courses,
   onOpenCourse,
@@ -35,6 +37,8 @@ export function LearnerPortal({
   onStudentChange?: (id: string) => void;
 }) {
   const data = useWorkspace();
+  const [registering, setRegistering] = useState(false),
+    [showCard, setShowCard] = useState(false);
   const [search, setSearch] = useState(""),
     [notice, setNotice] = useState("");
   const published = courses.filter((c) => c.published),
@@ -69,6 +73,17 @@ export function LearnerPortal({
       {c.thumbnail ? <img src={c.thumbnail} alt="" /> : <BookOpen size={22} />}
     </div>
   );
+  if (registering)
+    return (
+      <StudentRegistration
+        onClose={() => setRegistering(false)}
+        onComplete={(id) => {
+          onStudentChange?.(id);
+          setRegistering(false);
+          setShowCard(true);
+        }}
+      />
+    );
   return (
     <div className="learner-portal sw-learner-portal">
       <header className="learner-portal-head">
@@ -82,6 +97,14 @@ export function LearnerPortal({
           <p>Bienvenue, {student?.name || "Élève de démonstration"}</p>
         </div>
         <div className="learner-account">
+          <button className="btn" onClick={() => setRegistering(true)}>
+            Créer mon profil élève
+          </button>
+          {student && (
+            <button className="btn" onClick={() => setShowCard(!showCard)}>
+              Ma carte élève
+            </button>
+          )}
           <UserRound size={18} />
           <label>
             Aperçu élève
@@ -104,6 +127,13 @@ export function LearnerPortal({
         </div>
       </header>
       <main>
+        {student && showCard && (
+          <StudentCard
+            name={student.name}
+            code={data.codes[student.id]}
+            center="Oustadi Plus"
+          />
+        )}
         {notice && (
           <p role="status" className="sw-learner-notice">
             {notice}

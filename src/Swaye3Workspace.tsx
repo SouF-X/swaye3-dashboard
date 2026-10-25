@@ -317,7 +317,7 @@ export function Swaye3Workspace({
     }
   };
   const unanswered = data.questions.filter((q) => !q.replies.length).length;
-  const pending = data.students.filter(
+  const pending = data.centerStudents.filter(
     (s) => data.member(s.id).status === "requested",
   ).length;
   return (
@@ -535,11 +535,11 @@ function Overview({
       .filter(
         (a) =>
           accessState(a) === "active" &&
-          data.students.some((student) => student.id === a.studentId),
+          data.centerStudents.some((student) => student.id === a.studentId),
       )
       .map((a) => a.studentId),
   );
-  const pending = data.students.filter(
+  const pending = data.centerStudents.filter(
     (s) => data.member(s.id).status === "requested",
   );
   const unanswered = data.questions.filter((q) => !q.replies.length);

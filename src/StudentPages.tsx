@@ -1,23 +1,19 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
-  Plus,
   ScanLine,
   ArrowRight,
   Check,
-  Download,
   Upload,
-  UserPlus,
+  Users,
   QrCode,
   Clock3,
   Pause,
   RotateCcw,
   ChevronRight,
-  Copy,
 } from "lucide-react";
 import type { Course } from "./model";
 import {
   keys,
-  read,
   write,
   recordActivity,
   saveAccess,
@@ -25,9 +21,9 @@ import {
   dateLabel,
   today,
   addMonths,
+  findStudentByCode,
   type Student,
   type Access,
-  type Membership,
 } from "./swaye3Model";
 import type { Workspace } from "./useWorkspace";
 import {
@@ -47,6 +43,7 @@ type Shared = {
   notify: (message: string) => void;
   readOnly?: boolean;
 };
+
 export function StudentPages({
   data,
   courses,
@@ -57,44 +54,39 @@ export function StudentPages({
 }: { courseId?: string } & Shared) {
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all"),
-    [selected, setSelected] = useState<string | null>(null),
-    [creating, setCreating] = useState(false);
-  const people = data.students.filter(
+    [selected, setSelected] = useState<string | null>(null);
+  const people = data.centerStudents.filter(
     (s) =>
       (!courseId ||
         data.access.some(
           (a) => a.studentId === s.id && a.courseId === courseId,
         )) &&
-      `${s.name} ${s.email} ${data.codes[s.id] || ""}`
+      (
+        s.name +
+        " " +
+        (data.codes[s.id] || "") +
+        " " +
+        (data.member(s.id).status === "active" ? s.email : "")
+      )
         .toLowerCase()
         .includes(query.toLowerCase()) &&
       (filter === "all" || data.member(s.id).status === filter),
   );
-  const found = data.students.find((s) => s.id === selected);
+  const found = data.centerStudents.find((s) => s.id === selected);
   return (
     <>
       <PageTitle
-        title={courseId ? "Élèves du cours" : "Élèves"}
-        description={
-          courseId
-            ? "Les élèves inscrits et leurs droits d’accès."
-            : "Un dossier par élève, ses cours et son rattachement au centre."
-        }
+        title={courseId ? "Élèves du cours" : "Élèves du centre"}
+        description="Les élèves s’inscrivent dans l’app. Retrouvez leur carte, puis préparez le rattachement à votre centre."
         actions={
           !readOnly && (
-            <>
-              <button
-                className="sw-secondary"
-                onClick={() => navigate("/swaye3/enrollments")}
-              >
-                <ScanLine size={16} />
-                Inscrire par ID / QR
-              </button>
-              <button className="sw-primary" onClick={() => setCreating(true)}>
-                <Plus size={17} />
-                Ajouter un élève
-              </button>
-            </>
+            <button
+              className="sw-primary"
+              onClick={() => navigate("/swaye3/enrollments")}
+            >
+              <ScanLine size={16} />
+              Rechercher par ID / QR
+            </button>
           )
         }
       />
@@ -104,8 +96,8 @@ export function StudentPages({
             value={filter}
             onChange={setFilter}
             items={[
-              { id: "all", label: "Tous", count: data.students.length },
-              { id: "active", label: "Actifs" },
+              { id: "all", label: "Tous", count: data.centerStudents.length },
+              { id: "active", label: "Rattachés" },
               { id: "requested", label: "En attente" },
               { id: "suspended", label: "Suspendus" },
             ]}
@@ -113,7 +105,7 @@ export function StudentPages({
           <SearchField
             value={query}
             onChange={setQuery}
-            placeholder="Nom, email ou identifiant"
+            placeholder="Nom ou identifiant d’un élève du centre"
           />
         </div>
         {people.length ? (
@@ -139,7 +131,11 @@ export function StudentPages({
                         <Avatar name={s.name} />
                         <span>
                           <strong>{s.name}</strong>
-                          <small>{s.email || s.level || "Profil élève"}</small>
+                          <small>
+                            {data.member(s.id).status === "active"
+                              ? s.email || s.level || "Profil géré par l’élève"
+                              : "En attente du rattachement"}
+                          </small>
                         </span>
                       </button>
                     </td>
@@ -176,22 +172,22 @@ export function StudentPages({
             title={
               query || filter !== "all"
                 ? "Aucun élève correspondant"
-                : "Votre liste d’élèves commence ici"
+                : "Aucun élève rattaché pour le moment"
             }
             description={
               query
-                ? "Essayez un autre nom ou identifiant."
-                : "Ajoutez un profil, puis préparez son rattachement au centre."
+                ? "La recherche porte uniquement sur les élèves de ce centre. Utilisez l’ID ou le QR pour retrouver un nouvel élève."
+                : "L’élève crée son profil dans l’app et vous présente son QR ou son identifiant. Vous pouvez ensuite lui demander de rejoindre le centre."
             }
             action={
               !readOnly &&
               !query && (
                 <button
                   className="sw-primary"
-                  onClick={() => setCreating(true)}
+                  onClick={() => navigate("/swaye3/enrollments")}
                 >
-                  <UserPlus size={16} />
-                  Ajouter un élève
+                  <ScanLine size={16} />
+                  Retrouver un élève par sa carte
                 </button>
               )
             }
@@ -202,22 +198,6 @@ export function StudentPages({
           {people.length !== 1 ? "s" : ""}
         </footer>
       </div>
-      {creating && (
-        <Drawer
-          title="Ajouter un élève"
-          description="Créez son profil. Son accès aux cours se gère ensuite, séparément."
-          onClose={() => setCreating(false)}
-        >
-          <StudentForm
-            data={data}
-            onSave={(s) => {
-              setCreating(false);
-              setSelected(s.id);
-              notify("Profil élève créé.");
-            }}
-          />
-        </Drawer>
-      )}
       {found && (
         <StudentDrawer
           student={found}
@@ -232,194 +212,34 @@ export function StudentPages({
     </>
   );
 }
-function StudentForm({
-  data,
-  student,
-  onSave,
-}: {
-  data: Workspace;
-  student?: Student;
-  onSave: (s: Student) => void;
-}) {
-  const [form, setForm] = useState({
-      name: student?.name || "",
-      email: student?.email || "",
-      phone: student?.phone || "",
-      level: student?.level || "",
-    }),
-    [error, setError] = useState("");
-  const save = (e: FormEvent) => {
-    e.preventDefault();
-    if (
-      data.students.some(
-        (s) =>
-          s.id !== student?.id &&
-          form.email &&
-          s.email.toLowerCase() === form.email.trim().toLowerCase(),
-      )
-    ) {
-      setError(
-        "Un profil utilise déjà cet email. Retrouvez-le dans la liste des élèves.",
-      );
-      return;
-    }
-    try {
-      const s: Student = {
-        ...student,
-        ...form,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        id: student?.id || crypto.randomUUID(),
-        created: student?.created || new Date().toISOString(),
-      };
-      write(
-        keys.students,
-        student
-          ? data.students.map((x) => (x.id === s.id ? s : x))
-          : [...data.students, s],
-      );
-      if (!student)
-        write(keys.memberships, {
-          ...data.memberships,
-          [s.id]: { status: "unlinked" },
-        });
-      recordActivity(
-        `${student ? "Profil mis à jour" : "Profil créé"} · ${s.name}`,
-        "student",
-      );
-      onSave(s);
-    } catch {
-      setError(
-        "Le profil n’a pas pu être enregistré. Vérifiez l’espace disponible.",
-      );
-    }
-  };
-  return (
-    <form className="sw-form-stack" onSubmit={save}>
-      <label>
-        Nom complet
-        <input
-          required
-          minLength={2}
-          autoComplete="name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="Nom et prénom"
-        />
-      </label>
-      <label>
-        Adresse email <small>Facultatif</small>
-        <input
-          type="email"
-          autoComplete="email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          placeholder="eleve@exemple.ma"
-        />
-      </label>
-      <div className="sw-field-pair">
-        <label>
-          Téléphone <small>Facultatif</small>
-          <input
-            type="tel"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="06…"
-          />
-        </label>
-        <label>
-          Niveau scolaire
-          <select
-            value={form.level}
-            onChange={(e) => setForm({ ...form, level: e.target.value })}
-          >
-            <option value="">Non renseigné</option>
-            {[
-              "Collège",
-              "Tronc commun",
-              "1ère Bac",
-              "2ème Bac",
-              "Bac libre",
-              "Autre",
-            ].map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="sw-inline-note">
-        <UserPlus size={17} />
-        <p>
-          L’identifiant unique est créé automatiquement. Un nouveau profil doit
-          accepter le rattachement avant l’attribution de cours.
-        </p>
-      </div>
-      {error && (
-        <p role="alert" className="sw-error">
-          {error}
-        </p>
-      )}
-      <div className="sw-form-actions">
-        <button className="sw-primary">
-          {student ? "Enregistrer les modifications" : "Créer le profil"}
-        </button>
-      </div>
-    </form>
-  );
-}
 export function StudentDrawer({
   student,
   data,
   courses,
-  navigate,
   notify,
   onClose,
   readOnly = false,
 }: { student: Student; onClose: () => void } & Shared) {
-  const [tab, setTab] = useState("access"),
-    [edit, setEdit] = useState(false),
-    [card, setCard] = useState(false);
+  const [tab, setTab] = useState("access");
+  const consented = ["active", "suspended"].includes(
+    data.member(student.id).status,
+  );
   return (
     <Drawer title="Dossier élève" onClose={onClose} wide>
       <div className="sw-profile-summary">
         <Avatar name={student.name} />
         <div>
           <h3>{student.name}</h3>
-          <p>{data.codes[student.id] || "Identifiant en préparation"}</p>
+          <p>{data.codes[student.id]}</p>
         </div>
         <Badge status={data.member(student.id).status} />
       </div>
-      <div className="sw-profile-tools">
-        <button className="sw-secondary" onClick={() => setCard(!card)}>
-          <QrCode size={16} />
-          Carte élève
-        </button>
-        <button
-          className="sw-text-button"
-          onClick={() =>
-            navigate("/school?student=" + encodeURIComponent(student.id))
-          }
-        >
-          Aperçu élève
-          <ArrowRight size={15} />
-        </button>
-      </div>
-      {card && (
-        <StudentCard
-          name={student.name}
-          code={data.codes[student.id]}
-          center={data.profile.name}
-        />
-      )}
       <Tabs
         value={tab}
-        onChange={(v) => {
-          setTab(v);
-          setEdit(false);
-        }}
+        onChange={setTab}
         items={[
           { id: "access", label: "Cours et accès" },
-          { id: "profile", label: "Profil" },
+          { id: "profile", label: "Profil de l’élève" },
           { id: "history", label: "Historique" },
         ]}
       />
@@ -429,7 +249,6 @@ export function StudentDrawer({
             student={student}
             data={data}
             notify={notify}
-            navigate={navigate}
             readOnly={readOnly}
           />
           <AccessManager
@@ -441,17 +260,12 @@ export function StudentDrawer({
           />
         </>
       ) : tab === "profile" ? (
-        edit ? (
-          <StudentForm
-            data={data}
-            student={student}
-            onSave={() => {
-              setEdit(false);
-              notify("Profil mis à jour.");
-            }}
-          />
-        ) : (
-          <div className="sw-detail-list">
+        <div className="sw-detail-list">
+          <p className="sw-soft-note">
+            Ce profil appartient à l’élève et se modifie dans son app. Le centre
+            ne peut ni le créer ni modifier ses informations.
+          </p>
+          {consented ? (
             <dl>
               <dt>Email</dt>
               <dd>{student.email || "Non renseigné"}</dd>
@@ -459,20 +273,20 @@ export function StudentDrawer({
               <dd>{student.phone || "Non renseigné"}</dd>
               <dt>Niveau</dt>
               <dd>{student.level || "Non renseigné"}</dd>
-              <dt>Profil créé</dt>
+              <dt>Inscription dans l’app</dt>
               <dd>
                 {student.created
                   ? dateLabel(student.created)
                   : "Date non disponible"}
               </dd>
             </dl>
-            {!readOnly && (
-              <button className="sw-secondary" onClick={() => setEdit(true)}>
-                Modifier le profil
-              </button>
-            )}
-          </div>
-        )
+          ) : (
+            <p className="sw-soft-note">
+              Les informations du profil seront disponibles après l’accord de
+              rattachement.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="sw-activity-list">
           {data.activity.filter((a) => a.label.includes(student.name))
@@ -491,7 +305,7 @@ export function StudentDrawer({
           ) : (
             <Empty
               title="Aucune action récente"
-              description="Les nouvelles actions sur ce dossier apparaîtront ici."
+              description="Les actions du centre sur ce dossier apparaîtront ici."
             />
           )}
         </div>
@@ -503,12 +317,8 @@ function MembershipPanel({
   student,
   data,
   notify,
-  navigate,
   readOnly = false,
-}: { student: Student } & Pick<
-  Shared,
-  "data" | "notify" | "navigate" | "readOnly"
->) {
+}: { student: Student } & Pick<Shared, "data" | "notify" | "readOnly">) {
   const member = data.member(student.id);
   const request = () => {
     write(keys.memberships, {
@@ -546,25 +356,14 @@ function MembershipPanel({
       </div>
       <p>
         {member.status === "requested"
-          ? "L’élève doit accepter dans son aperçu avant de recevoir de nouveaux accès aux cours."
-          : "Préparez une demande de rattachement pour permettre l’attribution de cours."}
+          ? "L’élève doit accepter dans son app avant de recevoir de nouveaux accès aux cours."
+          : "Ce profil existe déjà dans l’app. Préparez une demande de rattachement ; l’élève devra l’accepter avant l’attribution de cours."}
       </p>
       {!readOnly && (
         <div className="sw-inline-actions">
           {member.status !== "requested" && (
             <button className="sw-primary" onClick={request}>
               Demander le rattachement
-            </button>
-          )}
-          {member.status === "requested" && (
-            <button
-              className="sw-secondary"
-              onClick={() =>
-                navigate("/school?student=" + encodeURIComponent(student.id))
-              }
-            >
-              Ouvrir l’aperçu élève
-              <ArrowRight size={15} />
             </button>
           )}
         </div>
@@ -737,79 +536,6 @@ export function AccessManager({
     </section>
   );
 }
-export function StudentCard({
-  name,
-  code,
-  center,
-}: {
-  name: string;
-  code?: string;
-  center: string;
-}) {
-  const [image, setImage] = useState(""),
-    [copied, setCopied] = useState(false);
-  useEffect(() => {
-    let live = true;
-    if (code)
-      import("qrcode")
-        .then((q) =>
-          q.toDataURL(code, {
-            width: 480,
-            margin: 3,
-            color: { dark: "#291E2B", light: "#FFFFFF" },
-          }),
-        )
-        .then((url) => {
-          if (live) setImage(url);
-        })
-        .catch(() => {
-          if (live) setImage("");
-        });
-    return () => {
-      live = false;
-    };
-  }, [code]);
-  return (
-    <div className="sw-student-card">
-      {image ? (
-        <img src={image} alt={"Code QR de " + name} />
-      ) : (
-        <QrCode size={60} />
-      )}
-      <div>
-        <span>{center}</span>
-        <h3>{name}</h3>
-        <code>{code}</code>
-        <div className="sw-inline-actions">
-          {image && (
-            <a
-              className="sw-text-button"
-              href={image}
-              download={"carte-" + code + ".png"}
-            >
-              <Download size={14} />
-              Télécharger le QR
-            </a>
-          )}
-          <button
-            className="sw-text-button"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(code || "");
-                setCopied(true);
-              } catch {
-                setCopied(false);
-              }
-            }}
-          >
-            <Copy size={14} />
-            {copied ? "Copié" : "Copier l’ID"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 export function ReceptionPage({
   data,
   courses,
@@ -833,9 +559,11 @@ export function ReceptionPage({
       setError("Saisissez l’identifiant de l’élève.");
       return;
     }
-    const found = data.students.find((s) => data.codes[s.id] === code);
+    const found = findStudentByCode(data.students, data.codes, code);
     if (!found) {
-      setError("Aucun profil ne correspond à cet identifiant dans cet espace.");
+      setError(
+        "Aucun compte élève ne correspond à ce code. Demandez à l’élève de vérifier la carte de son app.",
+      );
       return;
     }
     setError("");
@@ -880,7 +608,7 @@ export function ReceptionPage({
       if (fileRef.current) fileRef.current.value = "";
     }
   };
-  const pending = data.students.filter(
+  const pending = data.centerStudents.filter(
     (s) => data.member(s.id).status === "requested",
   );
   const expired = data.access.filter((a) => accessState(a) === "expired");
@@ -895,7 +623,7 @@ export function ReceptionPage({
             className="sw-secondary"
             onClick={() => navigate("/admin-app/users")}
           >
-            <UserPlus size={16} />
+            <Users size={16} />
             Liste des élèves
           </button>
         }
@@ -994,7 +722,6 @@ export function ReceptionPage({
               <MembershipPanel
                 student={student}
                 data={data}
-                navigate={navigate}
                 notify={notify}
                 readOnly={readOnly}
               />
@@ -1118,18 +845,4 @@ export function ReceptionPage({
       </section>
     </>
   );
-}
-export function respondMembership(
-  studentId: string,
-  status: Membership["status"],
-) {
-  const all = read<Record<string, Membership>>(keys.memberships, {});
-  write(keys.memberships, {
-    ...all,
-    [studentId]: {
-      ...all[studentId],
-      status,
-      respondedAt: new Date().toISOString(),
-    },
-  });
 }

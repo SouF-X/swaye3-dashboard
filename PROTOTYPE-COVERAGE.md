@@ -6,7 +6,7 @@ The Swaye3/OstadiPlus teacher-dashboard prototype was used as the domain referen
 | --- | --- | --- |
 | Overview and recent work | Real course/access/request counts, work queue and recorded activity | Visual desktop/mobile review |
 | Courses, subject, level and teacher | Course catalog and draft creation; retained REA lesson, content, media, quiz and preview components | Browser course creation, rich-text save and publication; media tests |
-| Student registry and unique code | Roster, editable dossier, UST code, real QR-card export | Browser profile creation and persisted code |
+| Student registry and unique code | Student-owned app registration and QR-card export; center-scoped roster and read-only dossier | Browser profile creation and persisted code |
 | Center attachment request | Unlinked → requested → accepted/refused in the local learner preview | Browser round trip |
 | Reception enrollment | Exact code and QR-image lookup, access request, activation, suspension, expiry and renewal | Actual QR-image upload plus activation/reload checks; date/expiry tests |
 | Shared course questions | Learner posts, teacher inbox/replies, unanswered filters | Browser round trip |
@@ -29,3 +29,7 @@ No claim is made that the entire Teachable platform or all production Swaye3 inf
 ## Course-creation correction
 
 The retained REA CourseWizard now drives a full-page details → cover → starting-content flow. Its bulk path uploads actual PDF/video/audio files and creates draft lessons with media blocks. Blank creation opens the REA curriculum. The former course-creation drawer is removed. Ordinary add forms use centered dialogs. Eight dedicated browser checks passed, including a real PDF import, mobile layout, centered dialogs and focus styling; see verification/course-creation-qa.json.
+
+## Student ownership correction
+
+Removed staff profile creation and editing, including the legacy Teachable student-management route in the Swaye3 app. Added a separate learner registry, student-side signup/ID/QR issuance, exact-code center lookup, contact-data hiding before consent, and an attachment-scoped center roster. Eleven browser checks passed for the full ownership flow, including a real app-issued QR lookup; see verification/student-ownership-qa.json. Six new model checks cover registration isolation, duplicate accounts, exact lookup and membership defaults (24 automated tests total). Production account verification and backend authorization remain required.

@@ -69,6 +69,7 @@ export type Profile = {
 };
 export const keys = {
   students: "teachable-recreation-students-v1",
+  registry: "teachable-swaye3-student-registry-v1",
   codes: "teachable-swaye3-student-codes-v1",
   memberships: "teachable-swaye3-memberships-v1",
   access: "teachable-swaye3-access-records-v1",
@@ -229,4 +230,72 @@ export function downloadCsv(filename: string, rows: (string | number)[][]) {
   link.download = filename;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Old center records retain their prior attachment; new app accounts never inherit one. */
+export function membershipFor(
+  id: string,
+  legacyIds: Set<string>,
+  memberships: Record<string, Membership>,
+): Membership {
+  return (
+    memberships[id] || { status: legacyIds.has(id) ? "active" : "unlinked" }
+  );
+}
+export function belongsToCenter(member: Membership) {
+  return ["active", "requested", "suspended"].includes(member.status);
+}
+export function findStudentByCode(
+  students: Student[],
+  codes: Record<string, string>,
+  value: string,
+) {
+  const code = value.trim().toUpperCase();
+  if (!/^UST-[A-Z0-9]{5,10}$/.test(code)) return undefined;
+  return students.find((s) => codes[s.id] === code);
+}
+export function registerStudentProfile(
+  fields: Pick<Student, "name" | "email" | "phone" | "level">,
+): Student {
+  const existing = [
+    ...normalizeStudents(read(keys.students, [])),
+    ...normalizeStudents(read(keys.registry, [])),
+  ];
+  const email = fields.email.trim().toLowerCase();
+  if (fields.name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email))
+    throw new Error("Renseignez votre nom et une adresse email valide.");
+  if (existing.some((s) => s.email.trim().toLowerCase() === email))
+    throw new Error(
+      "Cet email est déjà enregistré. Reprenez votre profil dans l’app.",
+    );
+  const student: Student = {
+    ...fields,
+    name: fields.name.trim(),
+    email,
+    id: crypto.randomUUID(),
+    created: new Date().toISOString(),
+  };
+  const codes = read<Record<string, string>>(keys.codes, {});
+  let code: string;
+  do {
+    code =
+      "UST-" +
+      crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase();
+  } while (Object.values(codes).includes(code));
+  write(keys.codes, { ...codes, [student.id]: code });
+  write(keys.registry, [
+    ...normalizeStudents(read(keys.registry, [])),
+    student,
+  ]);
+  return student;
+}
+
+export function centerProfile(student: Student, member: Membership): Student {
+  if (["active", "suspended"].includes(member.status)) return student;
+  return {
+    id: student.id,
+    name: student.name,
+    email: "",
+    created: student.created,
+  };
 }

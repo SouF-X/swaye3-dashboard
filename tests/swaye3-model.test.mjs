@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -90,4 +91,144 @@ test("explicit access metadata wins over a legacy enrollment entry", () => {
     { s: ["a"] },
   );
   assert.equal(records[0].status, "suspended");
+});
+
+function registryHarness(seed = {}) {
+  const values = new Map(
+    Object.entries(seed).map(([k, v]) => [k, JSON.stringify(v)]),
+  );
+  const exports = {};
+  vm.runInNewContext(compiled, {
+    exports,
+    Date,
+    Intl,
+    Set,
+    Object,
+    Array,
+    String,
+    Number,
+    JSON,
+    crypto: { randomUUID },
+    Event: class {},
+    window: { dispatchEvent() {} },
+    localStorage: {
+      getItem: (key) => values.get(key) || null,
+      setItem: (key, value) => values.set(key, value),
+    },
+  });
+  return { model: exports, values };
+}
+test("student app registration writes only its registry and leaves center profiles unchanged", () => {
+  const legacy = [
+    { id: "old", name: "Existing", email: "existing@example.test" },
+  ];
+  const h = registryHarness({ "teachable-recreation-students-v1": legacy });
+  const student = h.model.registerStudentProfile({
+    name: "App Student",
+    email: "APP@example.test",
+    phone: "",
+    level: "2ème Bac",
+  });
+  assert.equal(student.email, "app@example.test");
+  assert.deepEqual(
+    JSON.parse(h.values.get("teachable-recreation-students-v1")),
+    legacy,
+  );
+  assert.equal(
+    JSON.parse(h.values.get("teachable-swaye3-student-registry-v1"))[0].id,
+    student.id,
+  );
+  assert.equal(h.values.has("teachable-enrollments-v2"), false);
+  assert.equal(h.values.has("teachable-swaye3-memberships-v1"), false);
+  const codes = JSON.parse(h.values.get("teachable-swaye3-student-codes-v1"));
+  assert.match(codes[student.id], /^UST-[A-F0-9]{10}$/);
+});
+test("new app profiles never inherit an active center membership", () => {
+  assert.equal(
+    model.membershipFor("app", new Set(["old"]), {}).status,
+    "unlinked",
+  );
+  assert.equal(
+    model.membershipFor("old", new Set(["old"]), {}).status,
+    "active",
+  );
+  assert.equal(
+    model.membershipFor("app", new Set(), { app: { status: "requested" } })
+      .status,
+    "requested",
+  );
+});
+test("unattached and refused app accounts do not belong to the center roster", () => {
+  for (const status of ["unlinked", "rejected"])
+    assert.equal(model.belongsToCenter({ status }), false);
+  for (const status of ["active", "requested", "suspended"])
+    assert.equal(model.belongsToCenter({ status }), true);
+});
+test("registration rejects duplicate app and legacy emails without replacing accounts", () => {
+  const h = registryHarness({
+    "teachable-recreation-students-v1": [
+      { id: "old", email: "OLD@example.test" },
+    ],
+  });
+  assert.throws(
+    () =>
+      h.model.registerStudentProfile({
+        name: "New",
+        email: "old@example.test",
+      }),
+    /déjà enregistré/,
+  );
+  h.model.registerStudentProfile({
+    name: "App User",
+    email: "app@example.test",
+  });
+  assert.throws(
+    () =>
+      h.model.registerStudentProfile({
+        name: "Duplicate",
+        email: "APP@example.test",
+      }),
+    /déjà enregistré/,
+  );
+  assert.equal(
+    JSON.parse(h.values.get("teachable-swaye3-student-registry-v1")).length,
+    1,
+  );
+});
+test("staff lookup only resolves an exact shared student code, never name or email", () => {
+  const students = [
+      { id: "s", name: "Student", email: "student@example.test" },
+    ],
+    codes = { s: "UST-ABC123DEF0" };
+  assert.equal(
+    model.findStudentByCode(students, codes, " ust-abc123def0 ").id,
+    "s",
+  );
+  for (const value of [
+    "Student",
+    "student@example.test",
+    "UST-ABC123",
+    "ABC123DEF0",
+  ])
+    assert.equal(model.findStudentByCode(students, codes, value), undefined);
+});
+
+test("unaccepted center profiles redact student-owned contact and school fields", () => {
+  const student = {
+    id: "s",
+    name: "Student",
+    email: "private@example.test",
+    phone: "0600000000",
+    level: "2ème Bac",
+    created: "2026-10-25",
+  };
+  const pending = model.centerProfile(student, { status: "requested" });
+  assert.equal(pending.email, "");
+  assert.equal(pending.phone, undefined);
+  assert.equal(pending.level, undefined);
+  assert.equal(pending.name, "Student");
+  assert.equal(
+    model.centerProfile(student, { status: "active" }).email,
+    student.email,
+  );
 });

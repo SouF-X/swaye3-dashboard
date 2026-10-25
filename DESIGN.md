@@ -9,3 +9,5 @@ All visible actions must be useful and stateful. No simulated camera scan, fake 
 Mobile navigation uses a dismissible scrim, keyboard focus handling and inert hidden content. Tables scroll within their own surface; forms and drawers adapt to narrow screens. Respect reduced motion and maintain readable contrast.
 
 Teachable is the interaction foundation. Course creation uses the REA full-page, three-step setup; never replace it with a side drawer. Ordinary add forms use centered dialogs, while student dossiers can use a detailed side panel. Adapt branding and Swaye3-specific fields without replacing useful Teachable workflows. Focused fields use one thin border with a faint highlight, without a second heavy outline.
+
+Registration belongs in the student app. Do not add staff-facing “Ajouter un élève”, “Créer le profil” or personal-profile editing. The center’s primary action is “Rechercher par ID / QR”; its roster only lists its own attachment requests and accepted students. Show minimal matching identity before consent, then read-only profile fields. QR cards are issued and presented from the student app.

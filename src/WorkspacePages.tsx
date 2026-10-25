@@ -416,7 +416,7 @@ export function PaymentsPage({
   const visible = data.payments.filter(
     (p) =>
       (filter === "all" || (filter === "voided" ? p.voided : !p.voided)) &&
-      `${data.students.find((s) => s.id === p.studentId)?.name || ""} ${p.reference}`
+      `${data.centerStudents.find((s) => s.id === p.studentId)?.name || ""} ${p.reference}`
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
@@ -427,7 +427,8 @@ export function PaymentsPage({
     downloadCsv("encaissements-" + today() + ".csv", [
       ["Élève", "Date", "Montant MAD", "Mode", "Référence", "État"],
       ...visible.map((p) => [
-        data.students.find((s) => s.id === p.studentId)?.name || p.studentId,
+        data.centerStudents.find((s) => s.id === p.studentId)?.name ||
+          p.studentId,
         p.date,
         p.amount,
         p.method || "Non renseigné",
@@ -453,7 +454,7 @@ export function PaymentsPage({
             <button
               className="sw-primary"
               onClick={() => setCreating(true)}
-              disabled={!data.students.length}
+              disabled={!data.centerStudents.length}
             >
               <Plus size={17} />
               Consigner un règlement
@@ -507,7 +508,7 @@ export function PaymentsPage({
                   <tr key={p.id}>
                     <td>
                       <strong>
-                        {data.students.find((s) => s.id === p.studentId)
+                        {data.centerStudents.find((s) => s.id === p.studentId)
                           ?.name || "Profil non disponible"}
                       </strong>
                       <small>
@@ -536,7 +537,7 @@ export function PaymentsPage({
                             ),
                           );
                           recordActivity(
-                            `${p.voided ? "Règlement rétabli" : "Règlement annulé"} · ${data.students.find((s) => s.id === p.studentId)?.name || "Élève"}`,
+                            `${p.voided ? "Règlement rétabli" : "Règlement annulé"} · ${data.centerStudents.find((s) => s.id === p.studentId)?.name || "Élève"}`,
                             "payment",
                           );
                           notify(
@@ -558,9 +559,9 @@ export function PaymentsPage({
           <Empty
             title={query ? "Aucun résultat" : "Votre registre est à jour"}
             description={
-              data.students.length
+              data.centerStudents.length
                 ? "Les règlements consignés apparaîtront ici."
-                : "Ajoutez d’abord un profil élève pour consigner son règlement."
+                : "Retrouvez et rattachez d’abord un élève inscrit dans l’app pour consigner son règlement."
             }
           />
         )}
@@ -577,7 +578,7 @@ export function PaymentsPage({
             onSave={(p) => {
               write(keys.payments, [p, ...data.payments]);
               recordActivity(
-                `Règlement consigné · ${data.students.find((s) => s.id === p.studentId)?.name} · ${p.amount} MAD`,
+                `Règlement consigné · ${data.centerStudents.find((s) => s.id === p.studentId)?.name} · ${p.amount} MAD`,
                 "payment",
               );
               setCreating(false);
@@ -624,7 +625,7 @@ function PaymentForm({
           onChange={(e) => setForm({ ...form, studentId: e.target.value })}
         >
           <option value="">Choisir un élève</option>
-          {data.students.map((s) => (
+          {data.centerStudents.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
@@ -939,8 +940,10 @@ export function ReportsPage({
     {},
   );
   const ids = new Set([
-    ...data.students.map((s) => s.id),
-    ...Object.keys(data.enrollments),
+    ...data.centerStudents.map((s) => s.id),
+    ...Object.keys(data.enrollments).filter(
+      (id) => id === "demo" || data.centerStudents.some((s) => s.id === id),
+    ),
   ]);
   const rows = Array.from(ids)
     .map((id) => {
@@ -1315,11 +1318,34 @@ export function SettingsPage({ data, notify }: Pick<Base, "data" | "notify">) {
     [form, setForm] = useState<Profile>(data.profile),
     [saved, setSaved] = useState(false);
   const exportData = () => {
+    const centerIds = new Set(data.centerStudents.map((s) => s.id));
     const payload = {
       exportedAt: new Date().toISOString(),
       version: 1,
       state: Object.fromEntries(
-        Object.values(keys).map((key) => [key, read(key, null)]),
+        Object.values(keys)
+          .filter((key) => key !== keys.registry)
+          .map((key) => {
+            let value: unknown = read(key, null);
+            if (key === keys.students) value = data.centerStudents;
+            if ([keys.codes, keys.memberships, keys.enrollments].includes(key))
+              value = Object.fromEntries(
+                Object.entries((value || {}) as Record<string, unknown>).filter(
+                  ([id]) => centerIds.has(id),
+                ),
+              );
+            if (key === keys.access)
+              value = Object.fromEntries(
+                Object.entries(
+                  (value || {}) as Record<string, { studentId: string }>,
+                ).filter(([, item]) => centerIds.has(item.studentId)),
+              );
+            if ([keys.payments, keys.questions].includes(key))
+              value = (Array.isArray(value) ? value : []).filter(
+                (item: { studentId: string }) => centerIds.has(item.studentId),
+              );
+            return [key, value];
+          }),
       ),
       courses: read("teachable-recreation-v1", {}),
     };
