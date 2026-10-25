@@ -330,7 +330,7 @@ function MembershipPanel({
     });
     recordActivity(`Rattachement demandé · ${student.name}`, "student");
     notify(
-      "Demande préparée dans l’aperçu élève local. Aucune notification externe envoyée.",
+      "Demande enregistrée localement. Sa confirmation doit venir de l’app élève.",
     );
   };
   if (member.status === "active")

@@ -33,3 +33,7 @@ The retained REA CourseWizard now drives a full-page details → cover → start
 ## Student ownership correction
 
 Removed staff profile creation and editing, including the legacy Teachable student-management route in the Swaye3 app. Added a separate learner registry, student-side signup/ID/QR issuance, exact-code center lookup, contact-data hiding before consent, and an attachment-scoped center roster. Eleven browser checks passed for the full ownership flow, including a real app-issued QR lookup; see verification/student-ownership-qa.json. Six new model checks cover registration isolation, duplicate accounts, exact lookup and membership defaults (24 automated tests total). Production account verification and backend authorization remain required.
+
+## Dashboard-only repository
+
+The student app is outside this repository. Student registration, identity issuance and student-side consent screens are not bundled here. The dashboard reads existing student IDs/QRs and registry data, records attachment requests, and manages course access after an external acceptance is synchronized. There is no staff account-creation or personal-profile editing action. Course preview remains part of the retained Teachable authoring tools. Production student-registry and consent synchronization still require their service integration.

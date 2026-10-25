@@ -11,3 +11,7 @@ Mobile navigation uses a dismissible scrim, keyboard focus handling and inert hi
 Teachable is the interaction foundation. Course creation uses the REA full-page, three-step setup; never replace it with a side drawer. Ordinary add forms use centered dialogs, while student dossiers can use a detailed side panel. Adapt branding and Swaye3-specific fields without replacing useful Teachable workflows. Focused fields use one thin border with a faint highlight, without a second heavy outline.
 
 Registration belongs in the student app. Do not add staff-facing “Ajouter un élève”, “Créer le profil” or personal-profile editing. The center’s primary action is “Rechercher par ID / QR”; its roster only lists its own attachment requests and accepted students. Show minimal matching identity before consent, then read-only profile fields. QR cards are issued and presented from the student app.
+
+## Dashboard-only repository
+
+The student app is outside this repository. Student registration, identity issuance and student-side consent screens are not bundled here. The dashboard reads existing student IDs/QRs and registry data, records attachment requests, and manages course access after an external acceptance is synchronized. There is no staff account-creation or personal-profile editing action. Course preview remains part of the retained Teachable authoring tools. Production student-registry and consent synchronization still require their service integration.

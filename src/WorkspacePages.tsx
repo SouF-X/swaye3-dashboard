@@ -14,7 +14,6 @@ import {
   MapPin,
   ShieldCheck,
   FileDown,
-  MessageCircle,
   Send,
 } from "lucide-react";
 import type { Course } from "./model";
@@ -31,7 +30,6 @@ import {
   type Payment,
   type Teacher,
   type Profile,
-  type Question,
 } from "./swaye3Model";
 import {
   PageTitle,
@@ -1607,74 +1605,5 @@ export function SettingsPage({ data, notify }: Pick<Base, "data" | "notify">) {
         </div>
       )}
     </>
-  );
-}
-export function LearnerQuestions({
-  studentId,
-  course,
-  data,
-}: {
-  studentId: string;
-  course: Course;
-  data: Workspace;
-}) {
-  const [body, setBody] = useState(""),
-    [sent, setSent] = useState(false);
-  const questions = data.questions.filter((q) => q.courseId === course.id);
-  return (
-    <section className="sw-learner-questions">
-      <h2>Questions & réponses</h2>
-      <p>Un espace commun aux élèves du cours et à l’équipe pédagogique.</p>
-      {questions.map((q) => (
-        <article key={q.id}>
-          <strong>
-            {data.students.find((s) => s.id === q.studentId)?.name || "Élève"}
-          </strong>
-          <p>{q.body}</p>
-          {q.replies.map((r) => (
-            <blockquote key={r.id}>
-              <strong>{r.author}</strong>
-              <p>{r.body}</p>
-            </blockquote>
-          ))}
-        </article>
-      ))}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!body.trim()) return;
-          const q: Question = {
-            id: crypto.randomUUID(),
-            studentId,
-            courseId: course.id,
-            body: body.trim(),
-            createdAt: new Date().toISOString(),
-            replies: [],
-          };
-          write(keys.questions, [...data.questions, q]);
-          setBody("");
-          setSent(true);
-        }}
-      >
-        <label>
-          Poser une question
-          <textarea
-            required
-            rows={3}
-            value={body}
-            onChange={(e) => {
-              setBody(e.target.value);
-              setSent(false);
-            }}
-            placeholder="Qu’aimeriez-vous mieux comprendre ?"
-          />
-        </label>
-        <button className="sw-primary" disabled={!body.trim()}>
-          <MessageCircle size={16} />
-          Publier la question
-        </button>
-        {sent && <p role="status">Votre question a été publiée.</p>}
-      </form>
-    </section>
   );
 }

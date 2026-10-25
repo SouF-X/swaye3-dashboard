@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -92,57 +92,6 @@ test("explicit access metadata wins over a legacy enrollment entry", () => {
   );
   assert.equal(records[0].status, "suspended");
 });
-
-function registryHarness(seed = {}) {
-  const values = new Map(
-    Object.entries(seed).map(([k, v]) => [k, JSON.stringify(v)]),
-  );
-  const exports = {};
-  vm.runInNewContext(compiled, {
-    exports,
-    Date,
-    Intl,
-    Set,
-    Object,
-    Array,
-    String,
-    Number,
-    JSON,
-    crypto: { randomUUID },
-    Event: class {},
-    window: { dispatchEvent() {} },
-    localStorage: {
-      getItem: (key) => values.get(key) || null,
-      setItem: (key, value) => values.set(key, value),
-    },
-  });
-  return { model: exports, values };
-}
-test("student app registration writes only its registry and leaves center profiles unchanged", () => {
-  const legacy = [
-    { id: "old", name: "Existing", email: "existing@example.test" },
-  ];
-  const h = registryHarness({ "teachable-recreation-students-v1": legacy });
-  const student = h.model.registerStudentProfile({
-    name: "App Student",
-    email: "APP@example.test",
-    phone: "",
-    level: "2ème Bac",
-  });
-  assert.equal(student.email, "app@example.test");
-  assert.deepEqual(
-    JSON.parse(h.values.get("teachable-recreation-students-v1")),
-    legacy,
-  );
-  assert.equal(
-    JSON.parse(h.values.get("teachable-swaye3-student-registry-v1"))[0].id,
-    student.id,
-  );
-  assert.equal(h.values.has("teachable-enrollments-v2"), false);
-  assert.equal(h.values.has("teachable-swaye3-memberships-v1"), false);
-  const codes = JSON.parse(h.values.get("teachable-swaye3-student-codes-v1"));
-  assert.match(codes[student.id], /^UST-[A-F0-9]{10}$/);
-});
 test("new app profiles never inherit an active center membership", () => {
   assert.equal(
     model.membershipFor("app", new Set(["old"]), {}).status,
@@ -163,37 +112,6 @@ test("unattached and refused app accounts do not belong to the center roster", (
     assert.equal(model.belongsToCenter({ status }), false);
   for (const status of ["active", "requested", "suspended"])
     assert.equal(model.belongsToCenter({ status }), true);
-});
-test("registration rejects duplicate app and legacy emails without replacing accounts", () => {
-  const h = registryHarness({
-    "teachable-recreation-students-v1": [
-      { id: "old", email: "OLD@example.test" },
-    ],
-  });
-  assert.throws(
-    () =>
-      h.model.registerStudentProfile({
-        name: "New",
-        email: "old@example.test",
-      }),
-    /déjà enregistré/,
-  );
-  h.model.registerStudentProfile({
-    name: "App User",
-    email: "app@example.test",
-  });
-  assert.throws(
-    () =>
-      h.model.registerStudentProfile({
-        name: "Duplicate",
-        email: "APP@example.test",
-      }),
-    /déjà enregistré/,
-  );
-  assert.equal(
-    JSON.parse(h.values.get("teachable-swaye3-student-registry-v1")).length,
-    1,
-  );
 });
 test("staff lookup only resolves an exact shared student code, never name or email", () => {
   const students = [

@@ -1,0 +1,9 @@
+{
+  "scope": "Dashboard-only source distribution",
+  "productionBuild": "passed",
+  "automatedTests": "22 passed",
+  "studentAppScreens": "removed",
+  "coursePreview": "retained",
+  "studentRecords": "preserved; registry is read-only from dashboard UI",
+  "integrationBoundary": "Registration and student-side consent belong to the external student app."
+}

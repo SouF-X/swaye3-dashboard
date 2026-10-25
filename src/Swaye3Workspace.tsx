@@ -11,7 +11,6 @@ import {
   ChevronRight,
   Plus,
   Menu,
-  ArrowUpRight,
   ArrowRight,
   Check,
   Clock3,
@@ -403,14 +402,6 @@ export function Swaye3Workspace({
           ))}
         </nav>
         <div className="sw-sidebar-footer">
-          <button
-            className="sw-student-view"
-            onClick={() => navigate("/school")}
-          >
-            <GraduationCap size={17} />
-            <span>Voir l’espace élève</span>
-            <ArrowUpRight size={15} />
-          </button>
           <div className="sw-connection">
             <i className={storage.online ? "" : "offline"} />
             {storage.online

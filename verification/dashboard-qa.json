@@ -92,5 +92,6 @@
   "isolatedWorkspace": "http://127.0.0.1:4186",
   "automatedTests": "18 passed",
   "productionBuild": "passed",
-  "note": "Browser tests used an isolated database; no synthetic QA records were added to the main dashboard."
+  "note": "Historical integrated-prototype checks. The standalone learner app was subsequently removed from this dashboard repository; current packaging is dashboard-only.",
+  "historical": true
 }

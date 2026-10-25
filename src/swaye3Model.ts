@@ -254,41 +254,6 @@ export function findStudentByCode(
   if (!/^UST-[A-Z0-9]{5,10}$/.test(code)) return undefined;
   return students.find((s) => codes[s.id] === code);
 }
-export function registerStudentProfile(
-  fields: Pick<Student, "name" | "email" | "phone" | "level">,
-): Student {
-  const existing = [
-    ...normalizeStudents(read(keys.students, [])),
-    ...normalizeStudents(read(keys.registry, [])),
-  ];
-  const email = fields.email.trim().toLowerCase();
-  if (fields.name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email))
-    throw new Error("Renseignez votre nom et une adresse email valide.");
-  if (existing.some((s) => s.email.trim().toLowerCase() === email))
-    throw new Error(
-      "Cet email est déjà enregistré. Reprenez votre profil dans l’app.",
-    );
-  const student: Student = {
-    ...fields,
-    name: fields.name.trim(),
-    email,
-    id: crypto.randomUUID(),
-    created: new Date().toISOString(),
-  };
-  const codes = read<Record<string, string>>(keys.codes, {});
-  let code: string;
-  do {
-    code =
-      "UST-" +
-      crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase();
-  } while (Object.values(codes).includes(code));
-  write(keys.codes, { ...codes, [student.id]: code });
-  write(keys.registry, [
-    ...normalizeStudents(read(keys.registry, [])),
-    student,
-  ]);
-  return student;
-}
 
 export function centerProfile(student: Student, member: Membership): Student {
   if (["active", "suspended"].includes(member.status)) return student;

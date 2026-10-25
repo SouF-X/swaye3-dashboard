@@ -10,9 +10,7 @@ import {
 import { BlockContent } from "./ContentEditor";
 import type { Block, Course } from "./model";
 import "./learner.css";
-import { useWorkspace } from "./useWorkspace";
 import { hasAccess } from "./swaye3Model";
-import { LearnerQuestions } from "./WorkspacePages";
 
 export const learnerIdDefault = "demo";
 export const progressStorageKey = "teachable-progress-v2";
@@ -124,7 +122,6 @@ export function StudentPreview({
   onEdit?: () => void;
   initialAudience?: "Admin" | "Student" | "Public";
 }) {
-  const workspace = useWorkspace();
   const audienceOptions = ["Admin", "Student", "Public"] as const;
   type Audience = (typeof audienceOptions)[number];
   const [audience, setAudience] = useState<Audience>(initialAudience);
@@ -330,13 +327,6 @@ export function StudentPreview({
               <ChevronRight size={18} />
             </button>
           </div>
-        )}
-        {initialAudience === "Student" && (
-          <LearnerQuestions
-            studentId={studentId}
-            course={course}
-            data={workspace}
-          />
         )}
       </main>
     </div>
