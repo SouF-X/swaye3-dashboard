@@ -1,0 +1,96 @@
+{
+  "checks": [
+    {
+      "name": "new profile waits for center attachment and has no course access",
+      "passed": true
+    },
+    {
+      "name": "student card renders a real QR image",
+      "passed": true
+    },
+    {
+      "name": "learner can accept the center request without receiving course access automatically",
+      "passed": true
+    },
+    {
+      "name": "real generated QR image resolves the correct student dossier",
+      "passed": true
+    },
+    {
+      "name": "reception activates requested course with visible end date",
+      "passed": true
+    },
+    {
+      "name": "student ID and granted access survive reload",
+      "passed": true
+    },
+    {
+      "name": "learner can post a course Q&A thread",
+      "passed": true
+    },
+    {
+      "name": "teacher can reply and resolve the unanswered queue",
+      "passed": true
+    },
+    {
+      "name": "voiding a manual receipt retains its audit row",
+      "passed": true
+    },
+    {
+      "name": "payment cancellation never removes course access",
+      "passed": true
+    },
+    {
+      "name": "teacher response is visible in learner Q&A",
+      "passed": true
+    },
+    {
+      "name": "teacher directory records responsible teachers",
+      "passed": true
+    },
+    {
+      "name": "new course opens the retained REA curriculum editor",
+      "passed": true
+    },
+    {
+      "name": "retained REA rich-text editor saves lesson content",
+      "passed": true
+    },
+    {
+      "name": "course publication and subject/teacher metadata persist",
+      "passed": true
+    },
+    {
+      "name": "reception preview removes content, questions and team navigation",
+      "passed": true
+    },
+    {
+      "name": "teacher preview removes center cash and reception navigation",
+      "passed": true
+    },
+    {
+      "name": "center profile saves and updates the workspace identity",
+      "passed": true
+    },
+    {
+      "name": "dashboard has no Arabic switch or inherited Teachable settings",
+      "passed": true
+    },
+    {
+      "name": "mobile settings fit the viewport and hidden sidebar is inert",
+      "passed": true
+    },
+    {
+      "name": "mobile menu navigates and closes without the old inline QR panel",
+      "passed": true
+    },
+    {
+      "name": "student drawer contains keyboard focus",
+      "passed": true
+    }
+  ],
+  "isolatedWorkspace": "http://127.0.0.1:4186",
+  "automatedTests": "18 passed",
+  "productionBuild": "passed",
+  "note": "Browser tests used an isolated database; no synthetic QA records were added to the main dashboard."
+}

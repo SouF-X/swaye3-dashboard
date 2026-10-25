@@ -1,13 +1,55 @@
-@font-face{font-family:OustadiArabic;src:url('/swaye3/NotoSansArabic.ttf') format('truetype');font-display:swap}@font-face{font-family:OustadiDisplay;src:url('/swaye3/Bricolage.ttf') format('truetype');font-display:swap;font-weight:700}
-html[data-brand=swaye3]{--accent:#68234f;--ink:#291e2b;--border:#d7c6da;scrollbar-color:#a17a96 #f1e9f4}
-html[data-brand=swaye3] body{background:#faf8fb;color:#291e2b}
-html[data-brand=swaye3] :is(.btn.primary,.complete-button,.sales-cta){background:#68234f;color:#fff;border-color:#68234f}
-html[data-brand=swaye3] .page-builder>.builder-toolbar .btn.primary{background:#68234f;color:white;border-color:#68234f}
-html[data-brand=swaye3] :is(.progress i,.as-progress i,.learner-course-progress i){background:#68234f}
-html[data-brand=swaye3] :is(.status,.primary-badge,.published-badge){background:#f1e9f4;color:#68234f}
-html[data-brand=swaye3] :is(input,textarea,select){accent-color:#68234f}
-html[data-brand=swaye3] :focus-visible{outline:3px solid #68234f;outline-offset:3px}
-html[data-brand=swaye3] ::selection{background:#ffcca9;color:#291e2b}
-.sw-course-context{margin-bottom:24px;border-bottom:1px solid #d7c6da;padding-bottom:16px}.sw-course-context>strong{display:block;margin:12px 0;color:#291e2b;font-size:18px}.sw-back-link{padding:0;border:0;background:transparent;color:#68234f;font-size:13px;cursor:pointer}.sw-course-context nav{display:flex;gap:6px;flex-wrap:wrap}.sw-course-context nav button{padding:8px 14px;background:white;border:1px solid #d7c6da;border-radius:6px;color:#6f6072;cursor:pointer}.sw-course-context nav button.active{color:#68234f;background:#f1e9f4;border-color:#68234f}
-.sw-main .page-heading h1{font-family:OustadiDisplay,OustadiArabic,system-ui,sans-serif;font-weight:700;font-size:30px}.sw-main .page-heading{margin-top:0}.sw-main .page-heading p{max-width:65ch}.sw-main .editor-grid{grid-template-columns:minmax(0,1fr) 270px}.sw-main .as-local-note{font-size:12px}.sw-main .gate{background:#fff;border-color:#d7c6da}.sw-main :is(.table-wrap,.as-table-wrap){max-width:100%;overflow:auto}.sw-main .content-dialog{max-width:760px}
-@media(max-width:1000px){.sw-main .editor-grid{grid-template-columns:minmax(0,1fr)}.sw-main .editor-panel{border:1px solid #d7c6da}.sw-main .page-heading{flex-wrap:wrap;gap:16px}}
+html[data-brand="swaye3"] {
+  --accent: #68234f;
+  --ink: #291e2b;
+  --border: #d7c6da;
+  scrollbar-color: #a17a96 #f1e9f4;
+}
+html[data-brand="swaye3"] body {
+  background: #faf8fb;
+  color: #291e2b;
+}
+html[data-brand="swaye3"] :is(.btn.primary, .complete-button, .sales-cta) {
+  background: #68234f;
+  color: white;
+  border-color: #68234f;
+}
+html[data-brand="swaye3"]
+  :is(.progress i, .as-progress i, .learner-course-progress i) {
+  background: #68234f;
+}
+html[data-brand="swaye3"] :is(.status, .primary-badge, .published-badge) {
+  background: #f1e9f4;
+  color: #68234f;
+}
+html[data-brand="swaye3"] :is(input, textarea, select) {
+  accent-color: #68234f;
+}
+html[data-brand="swaye3"] :focus-visible {
+  outline: 3px solid #9a739a;
+  outline-offset: 3px;
+}
+html[data-brand="swaye3"] ::selection {
+  background: #ffcca9;
+  color: #291e2b;
+}
+html[data-brand="swaye3"] :is(.modal, .content-dialog) {
+  font-family: system-ui, sans-serif;
+  border-radius: 12px;
+  border: 1px solid #d7c6da;
+}
+html[data-brand="swaye3"] :is(.modal, .content-dialog) h2 {
+  font-family: OustadiDisplay, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 23px;
+}
+html[data-brand="swaye3"] :is(.modal, .content-dialog) label {
+  font-size: 13px;
+  color: #59445f;
+}
+html[data-brand="swaye3"] :is(.modal, .content-dialog) .btn {
+  border-radius: 6px;
+  font-size: 13px;
+}
+html[data-brand="swaye3"] .modal-head {
+  border-bottom: 1px solid #e8e1e9;
+}

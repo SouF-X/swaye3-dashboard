@@ -1,9 +1,7 @@
-# Oustadi Plus — Swaye3 workspace
+# Oustadi Plus · Swaye3 product
 
-Adapt the researched Teachable course-authoring workflow for Moroccan tutoring centers and teacher-owned learning content. The user's existing Swaye3 prototype and Oustadi Plus brand kit are authoritative for product purpose and identity.
+A local French-language workspace for Moroccan tutoring centers, independent teachers and center reception staff. Use the user's Swaye3 prototype as domain authority and the Teachable REA code as the course-authoring engine.
 
-Centers manage teachers, students, enrollment authorizations and manually recorded MAD payments. Teachers manage their content and learner progress. Students study between physical lessons. Payments and access are separate; no public course marketplace, coaching business, creator storefront or AI authoring is required for this pilot.
+Students have a dossier, unique UST identifier and QR card. Center attachment, course authorization and cash records are separate. An unlinked profile must accept a local attachment request before staff grant courses. Access has an explicit status and optional end date; legacy unlimited grants remain intact. Teacher departure and cash annulment do not remove existing access. Course Q&A is shared, not private messaging.
 
-The current scope is a clean, functional local center/teacher dashboard using the existing local course engine. Role switching is a preview; device limits, grace periods and offline policies are configuration previews rather than enforced security or DRM.
-
-Source references: the chat “Understand the Swaye3 SaaS idea”, its requirements extract, and `references/OstadiPlusPrototype-review` under the saved 2026-10-18 workspace. Earlier Teachable evidence remains a workflow reference, not the Swaye3 product specification.
+The center, teacher and reception selectors are preview contexts. Authentication, multi-tenant enforcement, native offline protection, device binding and subscription billing require production services. All test records must use the isolated QA workspace.

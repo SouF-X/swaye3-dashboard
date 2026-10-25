@@ -1,46 +1,806 @@
-import React, { useEffect, useState } from 'react';
-import { BookOpen, Users, ClipboardList, Wallet, ShieldCheck, ChartNoAxesColumn, Settings, ChevronRight, Plus, Menu, Languages, ArrowUpRight, Check, Trash2 } from 'lucide-react';
-import type { Course } from './model';
-import './swaye3.css';
-import {StudentLookup} from './StudentLookup';
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Users,
+  ScanLine,
+  Wallet,
+  ChartNoAxesColumn,
+  Settings,
+  MessageCircle,
+  ChevronRight,
+  Plus,
+  Menu,
+  ArrowUpRight,
+  ArrowRight,
+  Check,
+  Clock3,
+  PanelLeftClose,
+  GraduationCap,
+} from "lucide-react";
+import type { Course } from "./model";
+import {
+  read,
+  write,
+  accessState,
+  dateLabel,
+  type Activity,
+} from "./swaye3Model";
+import { useWorkspace, type Workspace } from "./useWorkspace";
+import { PageTitle, Empty, Badge } from "./WorkspaceUI";
+import { StudentPages, ReceptionPage } from "./StudentPages";
+import {
+  CourseCatalog,
+  CourseDetails,
+  PaymentsPage,
+  TeamPage,
+  ReportsPage,
+  QuestionsPage,
+  SettingsPage,
+} from "./WorkspacePages";
+import {
+  getServerStorageStatus,
+  subscribeServerStorageStatus,
+} from "./serverStorage";
+import "./swaye3.css";
 
-type Props = { courses: Course[]; path: string; onNavigate: (path: string) => void; children?: React.ReactNode };
-type Student = { id?: string; studentId?: string; userId?: string; name?: string; email?: string; courseId?: string; course?: string };
-type Payment = { id:string; studentId:string; amount:number; date:string; reference:string };
-type Teacher = { id:string; name:string; subject:string };
-const read=<T,>(key:string,fallback:T):T=>{try{const v=localStorage.getItem(key);return v?JSON.parse(v) as T:fallback}catch{return fallback}};
-const write=(key:string,value:unknown)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{/* storage can be unavailable */}};
-const idOf=(s:Student)=>s.id||s.studentId||s.userId||s.email||'';
-const labels={fr:{overview:'Tableau de bord',courses:'Cours',students:'Élèves',enrollments:'Inscriptions',team:'Équipe',payments:'Encaissements',access:'Accès',reports:'Suivi',settings:'Paramètres',welcome:'Votre espace pédagogique',subtitle:'Préparez vos cours et accompagnez les élèves de votre centre.', action:'Inscrire un élève',queue:'À préparer',view:'Ouvrir le cours',empty:'Aucun cours pour le moment.', learners:'élèves', enrolled:'inscrits', published:'publiés', drafts:'brouillons', search:'Rechercher un élève'},ar:{overview:'لوحة القيادة',courses:'الدروس',students:'التلاميذ',enrollments:'التسجيلات',team:'الفريق',payments:'المداخيل',access:'الولوج',reports:'التتبع',settings:'الإعدادات',welcome:'فضاءكم التربوي',subtitle:'حضّروا دروسكم وتابعوا تلاميذ المركز.',action:'تسجيل تلميذ',queue:'دروس للتحضير',view:'فتح الدرس',empty:'لا توجد دروس حالياً.',learners:'تلاميذ',enrolled:'مسجلون',published:'منشورة',drafts:'مسودات',search:'البحث عن تلميذ'}};
-const navItems=[['/swaye3/overview','overview',BookOpen],['/admin-app/courses/index','courses',BookOpen],['/admin-app/users','students',Users],['/swaye3/enrollments','enrollments',ClipboardList],['/swaye3/team','team',Users],['/swaye3/payments','payments',Wallet],['/swaye3/access','access',ShieldCheck],['/swaye3/reports','reports',ChartNoAxesColumn],['/admin-app/settings','settings',Settings]] as const;
-export function Swaye3Workspace({courses,path,onNavigate,children}:Props){
- const [lang,setLang]=useState<'fr'|'ar'>(()=>read('teachable-swaye3-language-v1','fr'));
- const [role,setRole]=useState<'centre'|'enseignant'>(()=>read('teachable-swaye3-role-v1','centre'));
- const [mobile,setMobile]=useState(false); const [,setRevision]=useState(0); const [notice,setNotice]=useState('');
- const t=labels[lang]; const students=(()=>{const raw=read<unknown>('teachable-recreation-students-v1',[]);const list=Array.isArray(raw)?raw:(raw&&typeof raw==='object'&&Array.isArray((raw as {students?:unknown[]}).students)?(raw as {students:unknown[]}).students:[]);return list.filter((x):x is Student=>!!x&&typeof x==='object')})();
- const enrollments=read<Record<string,string[]>>('teachable-enrollments-v2',{}); const keys=Object.keys(enrollments).filter(k=>Array.isArray(enrollments[k]));
- const published=courses.filter(c=>c.published).length; const drafts=courses.filter(c=>!c.published).length;
- useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(''),2600);return()=>clearTimeout(timer)},[notice]);
- const refresh=()=>setRevision(x=>x+1); const setEnroll=(studentId:string,courseId:string,enabled:boolean)=>{const current=read<Record<string,string[]>>('teachable-enrollments-v2',{});const next={...current,[studentId]:enabled?[...new Set([...(current[studentId]||[]),courseId])]:((current[studentId]||[]).filter(id=>id!==courseId))};write('teachable-enrollments-v2',next);refresh()};
- const current=path.replace(/\/$/,''); const active=current==='/swaye3'||current==='/swaye3/overview'?'/swaye3/overview':current;
- const section=active.split('/').pop()||'overview'; const headings:Record<string,string>={overview:t.overview,enrollments:t.enrollments,team:t.team,payments:t.payments,access:t.access,reports:t.reports};
- const action=(dest:string)=>onNavigate(dest);
- const studentLabel=(s:Student)=>s.name||s.email||idOf(s)||'Élève';
- const content=()=>{
- if(section==='overview')return <><div className="sw-hero"><div><h1>{t.welcome}</h1><p>{t.subtitle}</p></div><button className="sw-primary" onClick={()=>action('/admin-app/users')}><Plus size={17}/>{t.action}</button></div><div className="sw-strip"><span><b>{courses.length}</b> {t.courses.toLowerCase()}</span><span><b>{students.length}</b> {t.learners}</span><span><b>{keys.length}</b> {t.enrolled}</span><span><b>{published}</b> {t.published}</span><span><b>{drafts}</b> {t.drafts}</span></div><section className="sw-section"><div className="sw-section-head"><div><h2>{t.queue}</h2><p>Avancement de votre contenu pédagogique</p></div><button className="sw-link" onClick={()=>action('/admin-app/courses/index')}>Tous les cours <ArrowUpRight size={15}/></button></div>{courses.length?<div className="sw-course-list">{courses.map(c=>{const lessonCount=c.sections.reduce((n,s)=>n+s.lessons.length,0);const blockCount=c.sections.reduce((n,s)=>n+s.lessons.reduce((a,l)=>a+l.blocks.length,0),0);return <article className="sw-course-row" key={c.id}><div className="sw-course-icon"><BookOpen size={19}/></div><div className="sw-course-name"><strong>{c.title}</strong><small>{c.sections.length} chapitres · {lessonCount} leçons · {blockCount} éléments</small></div><span className={'sw-badge '+(c.published?'is-live':'')}>{c.published?'Publié':'Brouillon'}</span><button className="sw-row-action" onClick={()=>action(`/admin-app/courses/${c.id}/curriculum`)}>{t.view}<ChevronRight size={15}/></button></article>})}</div>:<div className="sw-empty">{t.empty}</div>}</section><div className="sw-lower"><section className="sw-note"><span className="sw-note-icon"><Users size={18}/></span><div><h3>Les élèves de votre centre</h3><p>Créez leur profil, puis attribuez les cours auxquels ils ont accès.</p><button className="sw-link" onClick={()=>action('/admin-app/users')}>Gérer les élèves <ArrowUpRight size={14}/></button></div></section>{role==='centre'&&<section className="sw-note"><span className="sw-note-icon peach"><Wallet size={18}/></span><div><h3>Suivi des encaissements</h3><p>Consignez les règlements reçus en personne. Ces notes ne déclenchent aucun paiement en ligne.</p><button className="sw-link" onClick={()=>action('/swaye3/payments')}>Ouvrir le registre <ArrowUpRight size={14}/></button></div></section>}</div></>;
- if(section==='enrollments')return <><PageIntro title={t.enrollments} desc="Attribuez et retirez l’accès aux cours. Les inscriptions restent indépendantes des règlements."/><div className="sw-callout"><ShieldCheck size={18}/> L’accès pédagogique et les encaissements sont suivis séparément.</div><div className="sw-table-wrap"><table className="sw-table"><thead><tr><th>Élève</th><th>Cours</th><th>Accès</th></tr></thead><tbody>{students.length?students.flatMap(s=>courses.map(c=>{const sid=idOf(s);if(!sid)return null;const yes=(enrollments[sid]||[]).includes(c.id);return <tr key={sid+c.id}><td><strong>{studentLabel(s)}</strong><small>{s.email&&s.email!==studentLabel(s)?s.email:''}</small></td><td>{c.title}</td><td><button className={'sw-toggle '+(yes?'on':'')} aria-pressed={yes} onClick={()=>setEnroll(sid,c.id,!yes)}><span/>{yes?'Inscrit':'Inscrire'}</button></td></tr>})).filter(Boolean):<tr><td colSpan={3}><div className="sw-empty">Aucun élève. <button className="sw-link" onClick={()=>action('/admin-app/users')}>Ajouter un élève</button></div></td></tr>}</tbody></table></div></>;
- if(section==='payments')return <PaymentPage students={students} refresh={refresh}/>;
- if(section==='team')return role==='enseignant'?<PageIntro title="Espace enseignant" desc="La gestion de l’équipe est réservée au rôle centre dans cet aperçu."/>:<TeamPage/>;
- if(section==='access')return <AccessPage/>;
- if(section==='reports')return <ReportsPage courses={courses} students={students} enrollments={enrollments}/>;
- return <PageIntro title={headings[section]||t.overview} desc="Votre espace pédagogique Oustadi Plus."/>;
- };
- const visible=navItems.filter(([,key])=>role==='centre'||!['team','payments'].includes(key));
- return <div className={'sw-app '+(lang==='ar'?'sw-rtl':'')} dir={lang==='ar'?'rtl':'ltr'}><aside className={'sw-sidebar '+(mobile?'open':'')}><button className="sw-brand" onClick={()=>action('/swaye3/overview')}><img className="sw-brand-logo" src={lang==='ar'?'/swaye3/logo-ar.svg':'/swaye3/logo-fr.svg'} alt="Oustadi Plus"/></button><div className="sw-role"><label htmlFor="sw-role">Espace</label><select id="sw-role" value={role} onChange={e=>{const v=e.target.value as 'centre'|'enseignant';setRole(v);write('teachable-swaye3-role-v1',v);if(v==='enseignant'&&['payments','team'].includes(section))action('/swaye3/overview')}}><option value="centre">Centre de soutien</option><option value="enseignant">Enseignant</option></select></div><nav aria-label="Navigation principale">{visible.map(([href,key,Icon])=><button key={key} className={'sw-nav '+((active===href||(href==='/admin-app/courses/index'&&active.startsWith('/admin-app/courses/')))?'active':'')} onClick={()=>{action(href);setMobile(false)}}><Icon size={18}/><span>{t[key]}</span>{active===href&&<i/>}</button>)}</nav><div className="sw-sidebar-bottom"><span className="sw-local"><Check size={14}/> Espace de démonstration local</span><button className="sw-student-link" onClick={()=>action('/school')}>Vue élève <ArrowUpRight size={15}/></button></div></aside><main className="sw-main"><header className="sw-header"><button className="sw-menu" aria-label="Ouvrir le menu" onClick={()=>setMobile(!mobile)}><Menu/></button><div className="sw-crumb">Oustadi Plus <ChevronRight size={14}/><strong>{headings[section]||(path.includes('/courses/')?t.courses:path.includes('/users')?t.students:path.includes('/settings')?t.settings:t.overview)}</strong></div><div className="sw-head-actions"><button className="sw-lang" onClick={()=>{const v=lang==='fr'?'ar':'fr';setLang(v);write('teachable-swaye3-language-v1',v)}}><Languages size={16}/>{lang==='fr'?'العربية':'Français'}</button><span className="sw-avatar">{role==='centre'?'C':'E'}</span></div></header><div className="sw-content">{(path==='/admin-app/users'||section==='enrollments')&&<StudentLookup students={students} courses={courses} onEnroll={setEnroll}/>} {children||content()}</div></main>{notice&&<div className="sw-toast" role="status">{notice}</div>}</div>;
+type Props = {
+  courses: Course[];
+  path: string;
+  onNavigate: (path: string) => void;
+  onCoursesChange: (courses: Course[]) => void;
+  children?: ReactNode;
+};
+type Role = "centre" | "enseignant" | "accueil";
+const navigation = [
+  {
+    path: "/swaye3/overview",
+    label: "Tableau de bord",
+    icon: LayoutDashboard,
+    key: "overview",
+    group: "pedagogy",
+  },
+  {
+    path: "/admin-app/courses/index",
+    label: "Cours & contenus",
+    icon: BookOpen,
+    key: "courses",
+    group: "pedagogy",
+  },
+  {
+    path: "/admin-app/users",
+    label: "Élèves",
+    icon: Users,
+    key: "students",
+    group: "pedagogy",
+  },
+  {
+    path: "/swaye3/questions",
+    label: "Questions & réponses",
+    icon: MessageCircle,
+    key: "questions",
+    group: "pedagogy",
+  },
+  {
+    path: "/swaye3/reports",
+    label: "Suivi pédagogique",
+    icon: ChartNoAxesColumn,
+    key: "reports",
+    group: "pedagogy",
+  },
+  {
+    path: "/swaye3/enrollments",
+    label: "Accueil & inscriptions",
+    icon: ScanLine,
+    key: "enrollments",
+    group: "center",
+  },
+  {
+    path: "/swaye3/team",
+    label: "Équipe pédagogique",
+    icon: GraduationCap,
+    key: "team",
+    group: "center",
+  },
+  {
+    path: "/swaye3/payments",
+    label: "Encaissements",
+    icon: Wallet,
+    key: "payments",
+    group: "center",
+  },
+  {
+    path: "/admin-app/settings",
+    label: "Paramètres",
+    icon: Settings,
+    key: "settings",
+    group: "settings",
+  },
+];
+const allowed = (key: string, role: Role) => {
+  if (role === "centre") return true;
+  if (role === "enseignant") return !["team", "payments", "enrollments"].includes(key);
+  return ["overview", "students", "enrollments", "payments"].includes(key);
+};
+export function Swaye3Workspace({
+  courses,
+  path,
+  onNavigate,
+  onCoursesChange,
+  children,
+}: Props) {
+  const data = useWorkspace();
+  const [role, setRole] = useState<Role>(() => {
+    const value = read<Role>("teachable-swaye3-role-v1", "centre");
+    return ["centre", "enseignant", "accueil"].includes(value)
+      ? value
+      : "centre";
+  });
+  const [isNarrow, setIsNarrow] = useState(
+    () => window.matchMedia("(max-width:800px)").matches,
+  );
+  const [mobile, setMobile] = useState(false),
+    [toast, setToast] = useState(""),
+    [storage, setStorage] = useState(getServerStorageStatus);
+  useEffect(() => subscribeServerStorageStatus(setStorage), []);
+  useEffect(() => {
+    document.documentElement.lang = "fr";
+    document.documentElement.dir = "ltr";
+  }, []);
+  useEffect(() => {
+    setMobile(false);
+  }, [path]);
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = setTimeout(() => setToast(""), 4200);
+    return () => clearTimeout(timeout);
+  }, [toast]);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width:800px)");
+    const change = () => setIsNarrow(query.matches);
+    query.addEventListener("change", change);
+    return () => query.removeEventListener("change", change);
+  }, []);
+  useEffect(() => {
+    if (!mobile || !isNarrow) return;
+    const before = document.activeElement as HTMLElement | null;
+    const sidebar = document.querySelector<HTMLElement>(".sw-sidebar");
+    const controls = () =>
+      Array.from(sidebar?.querySelectorAll<HTMLElement>("button,select") || []);
+    controls()[0]?.focus();
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobile(false);
+      if (e.key === "Tab") {
+        const items = controls();
+        if (e.shiftKey && document.activeElement === items[0]) {
+          e.preventDefault();
+          items.at(-1)?.focus();
+        } else if (!e.shiftKey && document.activeElement === items.at(-1)) {
+          e.preventDefault();
+          items[0]?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", key);
+      before?.focus();
+    };
+  }, [mobile, isNarrow]);
+  const courseMatch = path.match(
+    /^\/admin-app\/courses\/([^/]+)(?:\/([^/]+))?/,
+  );
+  const course = courses.find((c) => c.id === courseMatch?.[1]);
+  const courseSection = courseMatch?.[2] || "curriculum";
+  const creating = path.includes("/create/courses");
+  const current = course
+    ? "courses"
+    : path.includes("/courses/index") || creating
+      ? "courses"
+      : path.startsWith("/admin-app/users")
+        ? "students"
+        : path.startsWith("/admin-app/settings") || path === "/swaye3/access"
+          ? "settings"
+          : path.split("/").filter(Boolean).at(-1) || "overview";
+  const page = navigation.find((n) => n.key === current);
+  const notify = (message: string) => setToast(message);
+  const navigate = (dest: string) => {
+    setMobile(false);
+    onNavigate(dest);
+  };
+  const shared = {
+    data,
+    courses,
+    navigate,
+    notify,
+    readOnly: role === "enseignant",
+  };
+  const updateCourse = (updated: Course) =>
+    onCoursesChange(courses.map((c) => (c.id === updated.id ? updated : c)));
+  const content = () => {
+    if (!allowed(current, role))
+      return (
+        <Empty
+          title="Cette section appartient à un autre espace"
+          description="Choisissez l’espace Centre de soutien pour gérer cette partie du centre."
+          action={
+            <button
+              className="sw-secondary"
+              onClick={() => navigate("/swaye3/overview")}
+            >
+              Revenir au tableau de bord
+            </button>
+          }
+        />
+      );
+    if (course) {
+      if (courseSection === "information")
+        return (
+          <CourseDetails
+            course={course}
+            data={data}
+            onChange={updateCourse}
+            navigate={navigate}
+            notify={notify}
+          />
+        );
+      if (courseSection === "students")
+        return (
+          <StudentPages key={course.id} {...shared} courseId={course.id} />
+        );
+      if (courseSection === "reports")
+        return (
+          <ReportsPage
+            key={course.id}
+            data={data}
+            courses={courses}
+            courseId={course.id}
+          />
+        );
+      if (courseSection === "comments")
+        return (
+          <QuestionsPage
+            key={course.id}
+            data={data}
+            courses={courses}
+            courseId={course.id}
+            notify={notify}
+          />
+        );
+      return <div className="sw-authoring">{children}</div>;
+    }
+    switch (current) {
+      case "overview":
+        return (
+          <Overview
+            data={data}
+            courses={courses}
+            navigate={navigate}
+            role={role}
+          />
+        );
+      case "courses":
+        return (
+          <CourseCatalog
+            key={creating ? "create" : "list"}
+            {...shared}
+            onChange={onCoursesChange}
+            creatingInitially={creating}
+          />
+        );
+      case "students":
+        return <StudentPages {...shared} />;
+      case "enrollments":
+        return <ReceptionPage {...shared} />;
+      case "payments":
+        return <PaymentsPage {...shared} />;
+      case "team":
+        return <TeamPage data={data} notify={notify} />;
+      case "reports":
+        return <ReportsPage data={data} courses={courses} />;
+      case "questions":
+        return <QuestionsPage {...shared} />;
+      case "settings":
+        return <SettingsPage key={path} data={data} notify={notify} />;
+      default:
+        return (
+          <Empty
+            title="Retrouvons votre espace"
+            description="Cette page n’appartient pas au parcours du centre."
+            action={
+              <button
+                className="sw-primary"
+                onClick={() => navigate("/swaye3/overview")}
+              >
+                Tableau de bord
+              </button>
+            }
+          />
+        );
+    }
+  };
+  const unanswered = data.questions.filter((q) => !q.replies.length).length;
+  const pending = data.students.filter(
+    (s) => data.member(s.id).status === "requested",
+  ).length;
+  return (
+    <div className="sw-app" dir="ltr">
+      <a className="sw-skip-link" href="#workspace-main">
+        Aller au contenu
+      </a>
+      {mobile && (
+        <button
+          className="sw-mobile-scrim"
+          aria-label="Fermer la navigation"
+          onClick={() => setMobile(false)}
+        />
+      )}
+      <aside
+        className={"sw-sidebar " + (mobile ? "open" : "")}
+        inert={isNarrow && !mobile}
+        aria-hidden={isNarrow && !mobile}
+      >
+        <button
+          className="sw-sidebar-close"
+          aria-label="Fermer la navigation"
+          onClick={() => setMobile(false)}
+        >
+          <PanelLeftClose size={20} />
+        </button>
+        <button
+          className="sw-brand"
+          onClick={() => navigate("/swaye3/overview")}
+        >
+          <img src="/swaye3/logo-fr.svg" alt="Oustadi Plus" />
+        </button>
+        <div className="sw-workspace-picker">
+          <span className="sw-workspace-monogram">
+            {data.profile.name.slice(0, 1).toUpperCase()}
+          </span>
+          <div>
+            <strong>{data.profile.name}</strong>
+            <span>{data.profile.city || "Espace pédagogique"}</span>
+          </div>
+        </div>
+        <label className="sw-role-picker">
+          <span>Espace de travail</span>
+          <select
+            aria-label="Espace de travail"
+            value={role}
+            onChange={(e) => {
+              const next = e.target.value as Role;
+              setRole(next);
+              write("teachable-swaye3-role-v1", next);
+              if (!allowed(current, next)) navigate("/swaye3/overview");
+            }}
+          >
+            <option value="centre">Centre de soutien</option>
+            <option value="enseignant">Enseignant</option>
+            <option value="accueil">Accueil</option>
+          </select>
+        </label>
+        <nav aria-label="Navigation principale">
+          {["pedagogy", "center", "settings"].map((group) => (
+            <div className="sw-nav-group" key={group}>
+              {group === "center" && role !== "enseignant" && (
+                <span className="sw-nav-group-label">Gestion du centre</span>
+              )}
+              {navigation
+                .filter((n) => n.group === group && allowed(n.key, role))
+                .map((n) => (
+                  <button
+                    className={"sw-nav " + (current === n.key ? "active" : "")}
+                    aria-current={current === n.key ? "page" : undefined}
+                    key={n.key}
+                    onClick={() => navigate(n.path)}
+                  >
+                    <n.icon size={18} />
+                    <span>{n.label}</span>
+                    {n.key === "questions" && unanswered > 0 && (
+                      <b>{unanswered}</b>
+                    )}
+                    {n.key === "enrollments" && pending > 0 && <b>{pending}</b>}
+                  </button>
+                ))}
+            </div>
+          ))}
+        </nav>
+        <div className="sw-sidebar-footer">
+          <button
+            className="sw-student-view"
+            onClick={() => navigate("/school")}
+          >
+            <GraduationCap size={17} />
+            <span>Voir l’espace élève</span>
+            <ArrowUpRight size={15} />
+          </button>
+          <div className="sw-connection">
+            <i className={storage.online ? "" : "offline"} />
+            {storage.online
+              ? "Espace local · Synchronisé"
+              : "Enregistré dans le navigateur"}
+          </div>
+        </div>
+      </aside>
+      <div className="sw-main" inert={isNarrow && mobile}>
+        <header className="sw-header">
+          <div className="sw-header-left">
+            <button
+              className="sw-menu"
+              aria-label={mobile ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={mobile}
+              onClick={() => setMobile(!mobile)}
+            >
+              {mobile ? <PanelLeftClose size={20} /> : <Menu size={20} />}
+            </button>
+            <div className="sw-breadcrumb">
+              <span>Mon espace</span>
+              <ChevronRight size={14} />
+              <strong>{page?.label || "Tableau de bord"}</strong>
+              {course && (
+                <>
+                  <ChevronRight size={14} />
+                  <span className="sw-breadcrumb-course">{course.title}</span>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="sw-header-right">
+            {role !== "accueil" && (
+              <button
+                className="sw-header-create"
+                aria-label="Créer un cours"
+                onClick={() => navigate("/admin-app/create/courses/step-1")}
+              >
+                <Plus size={16} />
+                <span>Créer un cours</span>
+              </button>
+            )}
+            <span className="sw-header-divider" />
+            <button
+              className="sw-account"
+              onClick={() =>
+                navigate(
+                  role === "accueil"
+                    ? "/swaye3/overview"
+                    : "/admin-app/settings",
+                )
+              }
+              aria-label="Profil du centre"
+            >
+              {(data.profile.contact || data.profile.name)
+                .slice(0, 1)
+                .toUpperCase()}
+            </button>
+          </div>
+        </header>
+        <main id="workspace-main" className="sw-content" tabIndex={-1}>
+          {course && (
+            <div className="sw-course-context">
+              <button
+                className="sw-text-button"
+                onClick={() => navigate("/admin-app/courses/index")}
+              >
+                Tous les cours
+              </button>
+              <div>
+                <h2>{course.title}</h2>
+                <Badge status={course.published ? "published" : "draft"} />
+              </div>
+              <nav aria-label="Navigation du cours">
+                {[
+                  ["curriculum", "Contenu"],
+                  ["information", "Informations"],
+                  ["students", "Élèves"],
+                  ["comments", "Questions"],
+                  ["reports", "Progression"],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    aria-current={courseSection === key ? "page" : undefined}
+                    className={courseSection === key ? "active" : ""}
+                    onClick={() =>
+                      navigate(`/admin-app/courses/${course.id}/${key}`)
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          )}
+          {content()}
+        </main>
+      </div>
+      {toast && (
+        <div className="sw-toast" role="status">
+          <Check size={17} />
+          {toast}
+        </div>
+      )}
+    </div>
+  );
 }
-function PageIntro({title,desc}:{title:string;desc:string}){return <div className="sw-page-intro"><h1>{title}</h1><p>{desc}</p></div>}
-function PaymentPage({students,refresh}:{students:Student[];refresh:()=>void}){const [studentId,setStudent]=useState('');const [amount,setAmount]=useState('');const [date,setDate]=useState(new Date().toISOString().slice(0,10));const [reference,setReference]=useState('');const [error,setError]=useState('');const [payments,setPayments]=useState<Payment[]>(()=>read('teachable-swaye3-payments-v1',[]));const save=(e:React.FormEvent)=>{e.preventDefault();const n=Number(amount);if(!studentId||!Number.isFinite(n)||n<=0){setError('Choisissez un élève et indiquez un montant valide.');return}const rows=[{id:crypto.randomUUID?.()||String(Date.now()),studentId,amount:n,date,reference:reference.trim()},...payments];setPayments(rows);write('teachable-swaye3-payments-v1',rows);setAmount('');setReference('');setError('');refresh()};const name=(id:string)=>students.find(s=>idOf(s)===id)?.name||students.find(s=>idOf(s)===id)?.email||id;return <><PageIntro title="Encaissements" desc="Registre manuel des règlements reçus par le centre. Aucune transaction ni facture n’est créée."/><div className="sw-form-card"><h2>Consigner un règlement</h2><form className="sw-form" onSubmit={save}><label>Élève<select required value={studentId} onChange={e=>setStudent(e.target.value)}><option value="">Choisir un élève</option>{students.map(s=><option key={idOf(s)} value={idOf(s)}>{s.name||s.email||idOf(s)}</option>)}</select></label><label>Montant (MAD)<input aria-label="Montant en dirhams" min="0.01" step="0.01" type="number" value={amount} onChange={e=>setAmount(e.target.value)} required/></label><label>Date<input type="date" value={date} onChange={e=>setDate(e.target.value)} required/></label><label>Référence (facultatif)<input value={reference} onChange={e=>setReference(e.target.value)} placeholder="Ex. reçu papier 024"/></label><button className="sw-primary"><Plus size={16}/>Enregistrer le règlement</button></form>{error&&<p className="sw-error" role="alert">{error}</p>}</div><div className="sw-section-head sw-payment-head"><div><h2>Historique</h2><p>{payments.length} règlement{payments.length===1?'':'s'} consigné{payments.length===1?'':'s'}</p></div><strong>{payments.reduce((n,p)=>n+p.amount,0).toLocaleString('fr-MA')} MAD</strong></div><div className="sw-table-wrap"><table className="sw-table"><thead><tr><th>Élève</th><th>Date</th><th>Référence</th><th>Montant</th><th></th></tr></thead><tbody>{payments.length?payments.map(p=><tr key={p.id}><td>{name(p.studentId)}</td><td>{p.date}</td><td>{p.reference||'—'}</td><td><strong>{p.amount.toLocaleString('fr-MA')} MAD</strong></td><td><button className="sw-icon-btn" aria-label="Supprimer ce règlement" onClick={()=>{const rows=payments.filter(x=>x.id!==p.id);setPayments(rows);write('teachable-swaye3-payments-v1',rows)}}><Trash2 size={16}/></button></td></tr>):<tr><td colSpan={5}><div className="sw-empty">Aucun règlement consigné. Les paiements sont des notes locales.</div></td></tr>}</tbody></table></div></>}
-function TeamPage(){const [name,setName]=useState('');const [subject,setSubject]=useState('');const [rows,setRows]=useState<Teacher[]>(()=>read('teachable-swaye3-team-v1',[]));const add=(e:React.FormEvent)=>{e.preventDefault();if(!name.trim())return;const next=[...rows,{id:crypto.randomUUID?.()||String(Date.now()),name:name.trim(),subject:subject.trim()}];setRows(next);write('teachable-swaye3-team-v1',next);setName('');setSubject('')};return <><PageIntro title="Équipe" desc="Répertoire local des enseignants du centre."/><div className="sw-form-card"><h2>Ajouter un enseignant</h2><form className="sw-form" onSubmit={add}><label>Nom<input value={name} onChange={e=>setName(e.target.value)} required placeholder="Nom complet"/></label><label>Matière<input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Ex. Mathématiques"/></label><button className="sw-primary"><Plus size={16}/>Ajouter</button></form></div><div className="sw-table-wrap"><table className="sw-table"><thead><tr><th>Enseignant</th><th>Matière</th><th></th></tr></thead><tbody>{rows.length?rows.map(x=><tr key={x.id}><td>{x.name}</td><td>{x.subject||'—'}</td><td><button className="sw-icon-btn" aria-label={`Retirer ${x.name}`} onClick={()=>{const next=rows.filter(y=>y.id!==x.id);setRows(next);write('teachable-swaye3-team-v1',next)}}><Trash2 size={16}/></button></td></tr>):<tr><td colSpan={3}><div className="sw-empty">Aucun enseignant ajouté.</div></td></tr>}</tbody></table></div></>}
-function AccessPage(){const [settings,setSettings]=useState(()=>read('teachable-swaye3-access-v1',{devices:'1',grace:'7'}));const [saved,setSaved]=useState(false);return <><PageIntro title="Accès à l’espace" desc="Informations indicatives pour le centre. Ces réglages sont enregistrés localement et ne configurent pas de contrôle technique des appareils."/><div className="sw-access-card"><span className="sw-access-symbol"><ShieldCheck size={24}/></span><div><h2>Règles d’accès prévues</h2><p>Un appareil par élève · période de grâce de 7 jours après l’expiration de l’abonnement du centre. Les droits pédagogiques existants restent valables jusqu’à leur date de fin.</p><p className="sw-muted">Cette interface ne vérifie pas l’identité par QR code et n’applique pas de DRM. Pour retrouver un élève, utilisez la recherche dans la liste des élèves.</p></div></div><div className="sw-form-card"><h2>Configuration de référence</h2><form className="sw-form" onSubmit={e=>{e.preventDefault();write('teachable-swaye3-access-v1',settings);setSaved(true)}}><label>Appareils par élève<input type="number" min="1" max="5" value={settings.devices} onChange={e=>{setSaved(false);setSettings({...settings,devices:e.target.value})}}/></label><label>Jours de grâce<input type="number" min="0" max="30" value={settings.grace} onChange={e=>{setSaved(false);setSettings({...settings,grace:e.target.value})}}/></label><button className="sw-primary"><Check size={16}/>Enregistrer la référence</button></form>{saved&&<p className="sw-saved" role="status">Référence enregistrée sur cet appareil.</p>}</div></>}
-function ReportsPage({courses,students,enrollments}:{courses:Course[];students:Student[];enrollments:Record<string,string[]>}){const progress=read<Record<string,Record<string,string[]>>>('teachable-progress-v2',{});const tracked=students.map(s=>{const sid=idOf(s);let total=0,done=0;courses.forEach(c=>{if(!(enrollments[sid]||[]).includes(c.id))return;const live=c.sections.flatMap(x=>x.lessons).filter(l=>l.published);total+=live.length;done+=new Set((progress[sid]?.[c.id]||[]).filter(id=>live.some(l=>l.id===id))).size});return {s,total,done}});return <><PageIntro title="Suivi pédagogique" desc="Avancement calculé à partir des cours et de la progression enregistrée sur cet appareil."/><div className="sw-table-wrap"><table className="sw-table"><thead><tr><th>Élève</th><th>Cours suivis</th><th>Leçons terminées</th><th>Progression</th></tr></thead><tbody>{tracked.length?tracked.map(({s,total,done})=><tr key={idOf(s)}><td><strong>{s.name||s.email||idOf(s)}</strong></td><td>{(enrollments[idOf(s)]||[]).length}</td><td>{done} / {total}</td><td>{total?`${Math.round(done/total*100)}%`:'Aucune donnée'}</td></tr>):<tr><td colSpan={4}><div className="sw-empty">Ajoutez des élèves et consignez leur progression dans les cours pour afficher le suivi.</div></td></tr>}</tbody></table></div></>}
-
+function Overview({
+  data,
+  courses,
+  navigate,
+  role,
+}: {
+  data: Workspace;
+  courses: Course[];
+  navigate: (path: string) => void;
+  role: Role;
+}) {
+  const published = courses.filter((c) => c.published);
+  const active = new Set(
+    data.access
+      .filter((a) => accessState(a) === "active" && data.students.some((student) => student.id === a.studentId))
+      .map((a) => a.studentId),
+  );
+  const pending = data.students.filter(
+    (s) => data.member(s.id).status === "requested",
+  );
+  const unanswered = data.questions.filter((q) => !q.replies.length);
+  const expired = data.access.filter((a) => accessState(a) === "expired");
+  const date = new Intl.DateTimeFormat("fr-MA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Africa/Casablanca",
+  }).format(new Date());
+  const draft = courses.filter((c) => !c.published);
+  return (
+    <>
+      <PageTitle
+        title={
+          role === "enseignant"
+            ? "Votre espace pédagogique"
+            : role === "accueil"
+              ? "Bienvenue à l’accueil"
+              : "Tableau de bord"
+        }
+        description={`${date.charAt(0).toUpperCase() + date.slice(1)} · ${data.profile.name}`}
+        actions={
+          <button
+            className="sw-primary"
+            onClick={() =>
+              navigate(
+                role === "enseignant"
+                  ? "/admin-app/courses/index"
+                  : "/swaye3/enrollments",
+              )
+            }
+          >
+            {role === "enseignant" ? (
+              <BookOpen size={17} />
+            ) : (
+              <ScanLine size={17} />
+            )}{" "}
+            {role === "enseignant" ? "Gérer mes cours" : "Accueillir un élève"}
+          </button>
+        }
+      />
+      <div className="sw-metric-strip">
+        <div>
+          <span>Cours publiés</span>
+          <strong>
+            {published.length}
+            <small>/ {courses.length}</small>
+          </strong>
+          <p>
+            {draft.length} brouillon{draft.length !== 1 ? "s" : ""} à préparer
+          </p>
+        </div>
+        <div>
+          <span>Élèves avec accès</span>
+          <strong>{active.size}</strong>
+          <p>Sur les cours de cet espace</p>
+        </div>
+        <div>
+          <span>
+            {role === "enseignant"
+              ? "Questions sans réponse"
+              : "Rattachements en attente"}
+          </span>
+          <strong>
+            {role === "enseignant" ? unanswered.length : pending.length}
+          </strong>
+          <p>
+            {role === "enseignant"
+              ? "Pour accompagner les élèves"
+              : "À valider dans l’espace élève"}
+          </p>
+        </div>
+      </div>
+      <div className="sw-overview-grid">
+        <section className="sw-surface">
+          <div className="sw-section-heading sw-heading-between">
+            <div>
+              <h2>
+                {role === "accueil"
+                  ? "Les dernières demandes"
+                  : "Vos cours, au quotidien"}
+              </h2>
+              <p>
+                {role === "accueil"
+                  ? "Retrouvez les élèves à accompagner."
+                  : "Reprenez la préparation de votre contenu."}
+              </p>
+            </div>
+            <button
+              className="sw-text-button"
+              onClick={() =>
+                navigate(
+                  role === "accueil"
+                    ? "/admin-app/users"
+                    : "/admin-app/courses/index",
+                )
+              }
+            >
+              Voir tout
+              <ArrowRight size={15} />
+            </button>
+          </div>
+          {role === "accueil" ? (
+            pending.length ? (
+              <div className="sw-compact-list">
+                {pending.slice(0, 5).map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => navigate("/swaye3/enrollments")}
+                  >
+                    <Users size={19} />
+                    <span>
+                      <strong>{s.name}</strong>
+                      <small>{data.codes[s.id]}</small>
+                    </span>
+                    <Badge status="requested" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <Empty
+                title="Aucune demande en attente"
+                description="Les nouvelles demandes de rattachement apparaîtront ici."
+              />
+            )
+          ) : courses.length ? (
+            <div className="sw-overview-courses">
+              {[...draft, ...published].slice(0, 4).map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() =>
+                    navigate(`/admin-app/courses/${c.id}/curriculum`)
+                  }
+                >
+                  <span className="sw-overview-cover">
+                    {c.thumbnail ? (
+                      <img src={c.thumbnail} alt="" />
+                    ) : (
+                      <BookOpen size={20} />
+                    )}
+                  </span>
+                  <span>
+                    <strong>{c.title}</strong>
+                    <small>
+                      {c.sections.length} chapitres ·{" "}
+                      {c.sections.reduce((n, s) => n + s.lessons.length, 0)}{" "}
+                      leçons
+                    </small>
+                  </span>
+                  <Badge status={c.published ? "published" : "draft"} />
+                  <ChevronRight size={17} />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Empty
+              title="Préparez votre premier cours"
+              description="Un titre, des chapitres, puis vos premières leçons."
+              action={
+                <button
+                  className="sw-primary"
+                  onClick={() => navigate("/admin-app/create/courses/step-1")}
+                >
+                  <Plus size={16} />
+                  Créer un cours
+                </button>
+              }
+            />
+          )}
+        </section>
+        <aside className="sw-surface sw-priority">
+          <div className="sw-section-heading">
+            <h2>À suivre</h2>
+            <p>Les prochaines actions utiles.</p>
+          </div>
+          {role !== "enseignant" && (
+            <button onClick={() => navigate("/swaye3/enrollments")}>
+              <span className="sw-priority-icon peach">
+                <ScanLine size={19} />
+              </span>
+              <span>
+                <strong>Rattachements</strong>
+                <small>
+                  {pending.length
+                    ? "Des élèves attendent votre suivi."
+                    : "Aucune demande en attente."}
+                </small>
+              </span>
+              <b>{pending.length}</b>
+            </button>
+          )}
+          {role !== "accueil" && (
+            <button onClick={() => navigate("/swaye3/questions")}>
+              <span className="sw-priority-icon">
+                <MessageCircle size={19} />
+              </span>
+              <span>
+                <strong>Questions des élèves</strong>
+                <small>
+                  {unanswered.length
+                    ? "Des questions restent sans réponse."
+                    : "Les échanges sont à jour."}
+                </small>
+              </span>
+              <b>{unanswered.length}</b>
+            </button>
+          )}
+          {role !== "enseignant" && (
+            <button onClick={() => navigate("/swaye3/enrollments")}>
+              <span className="sw-priority-icon warm">
+                <Clock3 size={19} />
+              </span>
+              <span>
+                <strong>Accès à renouveler</strong>
+                <small>
+                  {expired.length
+                    ? "Des accès sont arrivés à échéance."
+                    : "Aucun accès expiré."}
+                </small>
+              </span>
+              <b>{expired.length}</b>
+            </button>
+          )}
+          <div className="sw-priority-note">
+            <Check size={16} />
+            <p>Les inscriptions et les règlements sont suivis séparément.</p>
+          </div>
+        </aside>
+      </div>
+      <section className="sw-surface sw-recent">
+        <div className="sw-section-heading">
+          <h2>Activité récente</h2>
+          <p>Les dernières actions enregistrées dans votre espace.</p>
+        </div>
+        {data.activity.length ? (
+          <div className="sw-activity-list">
+            {data.activity.slice(0, 5).map((a) => (
+              <ActivityRow key={a.id} activity={a} />
+            ))}
+          </div>
+        ) : (
+          <p className="sw-quiet-empty">
+            Vos prochaines actions apparaîtront ici : création de cours,
+            inscriptions et règlements.
+          </p>
+        )}
+      </section>
+    </>
+  );
+}
+function ActivityRow({ activity }: { activity: Activity }) {
+  return (
+    <div>
+      <span className="sw-activity-dot" />
+      <div>
+        <p>{activity.label}</p>
+        <small>{dateLabel(activity.at)}</small>
+      </div>
+    </div>
+  );
+}
