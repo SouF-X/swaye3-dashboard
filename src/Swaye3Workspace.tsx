@@ -119,7 +119,8 @@ const navigation = [
 ];
 const allowed = (key: string, role: Role) => {
   if (role === "centre") return true;
-  if (role === "enseignant") return !["team", "payments", "enrollments"].includes(key);
+  if (role === "enseignant")
+    return !["team", "payments", "enrollments"].includes(key);
   return ["overview", "students", "enrollments", "payments"].includes(key);
 };
 export function Swaye3Workspace({
@@ -283,14 +284,7 @@ export function Swaye3Workspace({
           />
         );
       case "courses":
-        return (
-          <CourseCatalog
-            key={creating ? "create" : "list"}
-            {...shared}
-            onChange={onCoursesChange}
-            creatingInitially={creating}
-          />
-        );
+        return <CourseCatalog key={creating ? "create" : "list"} {...shared} />;
       case "students":
         return <StudentPages {...shared} />;
       case "enrollments":
@@ -538,7 +532,11 @@ function Overview({
   const published = courses.filter((c) => c.published);
   const active = new Set(
     data.access
-      .filter((a) => accessState(a) === "active" && data.students.some((student) => student.id === a.studentId))
+      .filter(
+        (a) =>
+          accessState(a) === "active" &&
+          data.students.some((student) => student.id === a.studentId),
+      )
       .map((a) => a.studentId),
   );
   const pending = data.students.filter(

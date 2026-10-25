@@ -7,3 +7,5 @@ One persistent sidebar and header, grouped education and center navigation, clea
 All visible actions must be useful and stateful. No simulated camera scan, fake notifications, fabricated metrics, upgrade gates or decorative AI features. Changes to payments and teacher directory status preserve existing course entitlements. Preview boundaries belong in settings and contextual notes, not every main task.
 
 Mobile navigation uses a dismissible scrim, keyboard focus handling and inert hidden content. Tables scroll within their own surface; forms and drawers adapt to narrow screens. Respect reduced motion and maintain readable contrast.
+
+Teachable is the interaction foundation. Course creation uses the REA full-page, three-step setup; never replace it with a side drawer. Ordinary add forms use centered dialogs, while student dossiers can use a detailed side panel. Adapt branding and Swaye3-specific fields without replacing useful Teachable workflows. Focused fields use one thin border with a faint highlight, without a second heavy outline.

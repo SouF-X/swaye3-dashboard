@@ -24,10 +24,7 @@ html[data-brand="swaye3"] :is(.status, .primary-badge, .published-badge) {
 html[data-brand="swaye3"] :is(input, textarea, select) {
   accent-color: #68234f;
 }
-html[data-brand="swaye3"] :focus-visible {
-  outline: 3px solid #9a739a;
-  outline-offset: 3px;
-}
+
 html[data-brand="swaye3"] ::selection {
   background: #ffcca9;
   color: #291e2b;
@@ -52,4 +49,49 @@ html[data-brand="swaye3"] :is(.modal, .content-dialog) .btn {
 }
 html[data-brand="swaye3"] .modal-head {
   border-bottom: 1px solid #e8e1e9;
+}
+
+/* One shared focus treatment for dashboard, drawers, editors and learner views. */
+html[data-brand="swaye3"]
+  :is(
+    button,
+    a,
+    input[type="checkbox"],
+    input[type="radio"],
+    input[type="range"],
+    input[type="file"]
+  ):focus-visible {
+  outline: 1px solid #876489;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+html[data-brand="swaye3"]
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+        [type="file"]
+      ),
+    select,
+    textarea,
+    [contenteditable="true"]
+  ):focus {
+  border-color: #99749c;
+  outline: none;
+  outline-offset: 0;
+  box-shadow: 0 0 0 2px rgb(104 35 79 / 6%);
+}
+html[data-brand="swaye3"] .sw-search:focus-within {
+  border-color: #99749c;
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(104 35 79 / 6%);
+}
+html[data-brand="swaye3"] .sw-search input:focus {
+  outline: none !important;
+  box-shadow: none;
+}
+@media (forced-colors: active) {
+  html[data-brand="swaye3"]
+    :is(input, select, textarea, [contenteditable="true"]):focus-visible {
+    outline: 1px solid Highlight;
+    outline-offset: 2px;
+  }
 }

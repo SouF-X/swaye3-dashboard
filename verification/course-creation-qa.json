@@ -1,0 +1,38 @@
+{
+  "checks": [
+    {
+      "name": "course setup is a full page with no sidebar or creation drawer",
+      "passed": true
+    },
+    {
+      "name": "cover image is a separate Teachable-style step with an explicit skip option",
+      "passed": true
+    },
+    {
+      "name": "bulk creation uploads the actual PDF and lists it before finishing",
+      "passed": true
+    },
+    {
+      "name": "created draft lesson renders the real uploaded PDF in the REA editor",
+      "passed": true
+    },
+    {
+      "name": "ordinary add forms use centered dialogs rather than side drawers",
+      "passed": true
+    },
+    {
+      "name": "start from scratch creates an unpublished course and opens the REA curriculum",
+      "passed": true
+    },
+    {
+      "name": "mobile course setup has no horizontal overflow or sidebar",
+      "passed": true
+    },
+    {
+      "name": "text fields no longer render the doubled focus outline",
+      "passed": true
+    }
+  ],
+  "workspace": "isolated QA database on 4186",
+  "productionBuild": "passed"
+}

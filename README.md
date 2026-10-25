@@ -9,7 +9,7 @@ Requires Node.js 24+. Run `npm ci`, `npm run build`, then `npm start`. Open http
 ## Main workflows
 
 - **Overview:** measured course, access and pending-request counts, useful action queue and actual recorded activity.
-- **Courses:** create a draft with subject, level and responsible teacher; continue in the retained REA curriculum, rich-text, media and quiz editors. Course publication requires a published lesson.
+- **Courses:** use the retained Teachable three-step full-page setup (details, cover image, starting content). Start empty or upload real PDF/video/audio files as draft lessons. Subject, level and responsible teacher remain in course information. Continue in the REA curriculum, rich-text, media and quiz editors. Course publication requires a published lesson.
 - **Students:** searchable roster and individual dossiers with contact details, unique UST identifiers, downloadable QR cards, membership status, course access and activity history.
 - **Reception:** exact ID lookup or local QR-image decoding; separate center attachment, course activation, suspension and renewal with end dates.
 - **Learner preview:** accept or refuse a center request, request course access, study granted published courses and post course questions.

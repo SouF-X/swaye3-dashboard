@@ -25,3 +25,7 @@ The Swaye3/OstadiPlus teacher-dashboard prototype was used as the domain referen
 - Production notifications, audit authorization and secure multi-user concurrency.
 
 No claim is made that the entire Teachable platform or all production Swaye3 infrastructure has been recreated. Existing course content, grants and financial notes were preserved during the UI adaptation.
+
+## Course-creation correction
+
+The retained REA CourseWizard now drives a full-page details → cover → starting-content flow. Its bulk path uploads actual PDF/video/audio files and creates draft lessons with media blocks. Blank creation opens the REA curriculum. The former course-creation drawer is removed. Ordinary add forms use centered dialogs. Eight dedicated browser checks passed, including a real PDF import, mobile layout, centered dialogs and focus styling; see verification/course-creation-qa.json.

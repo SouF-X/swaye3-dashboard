@@ -162,14 +162,14 @@ export function Drawer({
   }, []);
   return (
     <div
-      className="sw-overlay"
+      className={"sw-overlay " + (!wide ? "sw-overlay-centered" : "")}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <section
         ref={ref}
-        className={"sw-drawer " + (wide ? "wide" : "")}
+        className={"sw-drawer " + (wide ? "wide" : "sw-modal")}
         role="dialog"
         aria-modal="true"
         aria-label={title}

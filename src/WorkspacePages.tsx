@@ -53,16 +53,9 @@ export function CourseCatalog({
   data,
   courses,
   navigate,
-  notify,
-  onChange,
-  creatingInitially = false,
-}: {
-  onChange: (courses: Course[]) => void;
-  creatingInitially?: boolean;
-} & Base) {
+}: Pick<Base, "data" | "courses" | "navigate">) {
   const [query, setQuery] = useState(""),
-    [filter, setFilter] = useState("all"),
-    [creating, setCreating] = useState(creatingInitially);
+    [filter, setFilter] = useState("all");
   const visible = courses.filter(
     (c) =>
       (filter === "all" ||
@@ -77,7 +70,10 @@ export function CourseCatalog({
         title="Cours & contenus"
         description="Votre bibliothèque pédagogique, du premier brouillon au cours publié."
         actions={
-          <button className="sw-primary" onClick={() => setCreating(true)}>
+          <button
+            className="sw-primary"
+            onClick={() => navigate("/admin-app/create/courses/step-1")}
+          >
             <Plus size={17} />
             Créer un cours
           </button>
@@ -189,7 +185,7 @@ export function CourseCatalog({
               !query && (
                 <button
                   className="sw-primary"
-                  onClick={() => setCreating(true)}
+                  onClick={() => navigate("/admin-app/create/courses/step-1")}
                 >
                   <Plus size={16} />
                   Créer un cours
@@ -202,37 +198,6 @@ export function CourseCatalog({
           {visible.length} cours affiché{visible.length !== 1 ? "s" : ""}
         </footer>
       </div>
-      {creating && (
-        <Drawer
-          title="Créer un cours"
-          description="Commencez avec l’essentiel. Vous ajouterez les leçons dans l’éditeur."
-          onClose={() => {
-            setCreating(false);
-            if (creatingInitially) navigate("/admin-app/courses/index");
-          }}
-        >
-          <CourseDetailsForm
-            data={data}
-            onSave={(form, meta) => {
-              const course: Course = {
-                id: crypto.randomUUID(),
-                title: form.title.trim(),
-                description: form.description,
-                published: false,
-                sections: [
-                  { id: crypto.randomUUID(), title: "Chapitre 1", lessons: [] },
-                ],
-              };
-              write(keys.meta, { ...data.meta, [course.id]: meta });
-              onChange([...courses, course]);
-              recordActivity("Cours créé · " + course.title, "course");
-              setCreating(false);
-              notify("Brouillon créé. Ajoutez votre première leçon.");
-              navigate(`/admin-app/courses/${course.id}/curriculum`);
-            }}
-          />
-        </Drawer>
-      )}
     </>
   );
 }
@@ -1525,7 +1490,30 @@ export function SettingsPage({ data, notify }: Pick<Base, "data" | "notify">) {
                 élève.
               </p>
             </div>
-            <div className="sw-policy-reference"><div><strong>1</strong><span>appareil enregistré par élève</span></div><div><strong>1</strong><span>centre actif par élève</span></div><div><strong>7 jours</strong><span>de grâce après l’expiration de l’abonnement du centre</span></div><div className="sw-inline-note"><ShieldCheck size={18}/><p>Politique cible du prototype. Le contrôle des appareils, le registre partagé et l’abonnement du centre nécessitent les services de production.</p></div></div>
+            <div className="sw-policy-reference">
+              <div>
+                <strong>1</strong>
+                <span>appareil enregistré par élève</span>
+              </div>
+              <div>
+                <strong>1</strong>
+                <span>centre actif par élève</span>
+              </div>
+              <div>
+                <strong>7 jours</strong>
+                <span>
+                  de grâce après l’expiration de l’abonnement du centre
+                </span>
+              </div>
+              <div className="sw-inline-note">
+                <ShieldCheck size={18} />
+                <p>
+                  Politique cible du prototype. Le contrôle des appareils, le
+                  registre partagé et l’abonnement du centre nécessitent les
+                  services de production.
+                </p>
+              </div>
+            </div>
           </section>
           <aside className="sw-surface sw-padded">
             <h2>Les droits restent distincts</h2>
